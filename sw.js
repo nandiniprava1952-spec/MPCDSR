@@ -1,5 +1,5 @@
 /* MPCDSR service worker: offline-capable app shell. Cloud (Apps Script) calls are never cached. */
-const VERSION = 'mpcdsr-v23';
+const VERSION = 'mpcdsr-v25';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

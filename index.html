@@ -2479,7 +2479,7 @@ function mpOpenFacilityManager(){
 window.mpOpenFacilityManager = mpOpenFacilityManager;
 function mpDistrictLogout(){ try{ sessionStorage.removeItem('mp_district_auth'); }catch(e){} location.reload(); }
 // ---- Cloud speed-ups: (1) several requests in flight at once, (2) per-district cache in this browser ----
-const CLOUD_MAX_PARALLEL = 6;          // simultaneous requests to the Apps Script (it copes with a handful)
+const CLOUD_MAX_PARALLEL = 10;          // simultaneous requests to the Apps Script (it copes with a handful)
 const CLOUD_LOCAL_CACHE  = true;       // keep downloaded district records in this browser (IndexedDB); set false to turn off
 let _recInFlight = 0; const _recWaiters = [];
 async function recCall(action, payload){
@@ -2594,6 +2594,13 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
     document.getElementById('mplockName').textContent = FACILITY_LOCK ? (FACILITY_LOCK.name+' ('+mpFacKindLabel(FACILITY_LOCK)+'), '+DISTRICT_LOCK.name+' district') : (BLOCK_LOCK ? (BLOCK_LOCK.name+' block, '+DISTRICT_LOCK.name+' district') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'All districts (State)'));
     { const fm = document.getElementById('mpFacMgr'); if(fm) fm.style.display = (DISTRICT_LOCK && !BLOCK_LOCK && !FACILITY_LOCK && CLOUD_AUTH && CLOUD_AUTH.district!=='ADMIN') ? '' : 'none'; }
+    // SNCU / NBSU logins: no MDR module (child deaths only) - hide the MDR tab and open CDR
+    if(FACILITY_LOCK && (FACILITY_LOCK.kind==='SNCU' || FACILITY_LOCK.kind==='NBSU')){
+      const mt = document.querySelector('.tab-btn[data-tab="mdr"]'), ct = document.querySelector('.tab-btn[data-tab="cdr"]');
+      if(mt) mt.style.display='none';
+      const mm = document.getElementById('mdr'); if(mm){ mm.classList.remove('active'); mm.style.display='none'; }
+      if(ct) ct.click();
+    }
     // facility / SNCU / NBSU logins work on both MDR (place = Health Facilities) and CDR (place = Public facility) records of their own facility
     // A district login (not state, not block) can create block logins.
     // Block logins can save (merged into the district's records, touching only their own block); deleting stays district/admin only.
@@ -3311,26 +3318,31 @@ function makeModule(containerId, opts){
   }
   async function cloudLoadModule(silent){
     if(!cloudReady() || cloudBusy) return;
+    // SNCU / NBSU logins have no MDR module: don't download maternal records at all
+    if(containerId==='mdr' && FACILITY_LOCK && (FACILITY_LOCK.kind==='SNCU' || FACILITY_LOCK.kind==='NBSU')) return;
     cloudBusy = true;
     try{
-      // Fast path for district / block logins: show the copy saved on this device straight away,
+      // Ask the cloud for the manifest straight away; read the on-device copy while that request is in flight.
+      const manifestP = recCall('manifest', { module: containerId }); manifestP.catch(()=>{});
+      // Fast path (district / block / facility / state logins): show the copy saved on this device immediately,
       // then confirm with the cloud below (no second render if nothing changed).
-      let shownUploadId = null;
-      if(!lineListing && DISTRICT_LOCK && CLOUD_LOCAL_CACHE){
-        const hit = await cloudCacheLatest(containerId, DISTRICT_LOCK.code);
-        if(hit && hit.arr.length){
-          const recs = districtLockRecords(hit.arr);
-          if(recs.length){
-            lineListing = { sheetName: 'Cloud (this device)', records: recs };
-            shownUploadId = hit.uploadId;
-            lineListingRebuildAndRender();
-          }
-        }
+      const shown = new Map();
+      const isAdmin = !!(CLOUD_AUTH && CLOUD_AUTH.district==='ADMIN');
+      if(!lineListing && CLOUD_LOCAL_CACHE && (DISTRICT_LOCK || isAdmin)){
+        const codes = DISTRICT_LOCK ? [DISTRICT_LOCK.code] : Object.keys(DISTRICT_ACCESS);
+        const hits = (await Promise.all(codes.map(c=>cloudCacheLatest(containerId, c).then(h=>h&&h.arr.length?{c,h}:null)))).filter(Boolean);
+        let cachedAll = []; hits.forEach(x=>{ shown.set(String(x.c), String(x.h.uploadId)); for(let q=0;q<x.h.arr.length;q++) cachedAll.push(x.h.arr[q]); });
+        const recs = districtLockRecords(cachedAll);
+        if(recs.length){
+          lineListing = { sheetName: 'Cloud (this device)', records: recs };
+          lineListingRebuildAndRender();
+          setCloudStatus('Showing '+recs.length.toLocaleString()+' records saved on this device — checking cloud...');
+        } else shown.clear();
       }
-      setCloudStatus('Checking cloud for records...');
-      const j = await recCall('manifest', { module: containerId });
+      if(!shown.size) setCloudStatus('Checking cloud for records...');
+      const j = await manifestP;
       const ms = j.manifests || [];
-      if(shownUploadId && ms.length===1 && String(ms[0].uploadId)===String(shownUploadId)){
+      if(shown.size && ms.length===shown.size && ms.every(m=>shown.get(String(m.district))===String(m.uploadId))){
         setCloudStatus('Loaded '+lineListing.records.length.toLocaleString()+' records (up to date with cloud).');
         return;
       }
