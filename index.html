@@ -187,14 +187,54 @@ header.has-lock h1{margin-top:34px;}
 .cloud-row .cloud-status:empty{display:none;}
 </style>
 <style id="mp-login-css">
-/* Login page (SamMPurna flow): District -> Block (optional) -> Facility (optional) -> Passcode. Original dark/blue theme kept. */
-#mpg select:disabled{opacity:.6;}
-#mpg button.viewpw{width:auto;background:transparent;color:#60a5fa;padding:0;margin:-4px 0 10px;font-weight:500;font-size:12.5px;text-decoration:underline;min-height:0;}
+/* Login page: original dark theme, with tabs (District / State | Block / SC / PHC | SNCU / NBSU) */
+#mpg .lt-tabs{display:flex;gap:4px;background:#0f1115;border:1px solid #262b36;border-radius:10px;padding:4px;margin:0 0 14px;}
+#mpg .lt-tab{flex:1 1 0;min-width:0;width:auto;margin:0;padding:9px 3px;border:0;border-radius:7px;background:transparent;color:#9aa2b1;font-weight:700;font-size:12px;line-height:1.15;white-space:normal;cursor:pointer;}
+#mpg .lt-tab.active{background:#2563eb;color:#fff;}
+#mpg .lt-help{margin:0 0 14px;font-size:12.5px;color:#9aa2b1;line-height:1.45;}
+#mpg .lt-pane[hidden]{display:none;}
+#mpg .lt-f label{display:block;margin:0 0 5px;font-size:12.5px;font-weight:600;color:#c3cad8;}
+#mpg .lt-f label .lt-opt{font-weight:400;color:#7f8899;}
+#mpg .lt-f select:disabled{opacity:.6;}
+#mpg .lt-pw{position:relative;}
+#mpg .lt-pw input{padding-right:72px;}
+#mpg .lt-eye{position:absolute;right:6px;top:5px;width:auto;margin:0;padding:5px 10px;border:0;background:transparent;color:#9aa2b1;font-size:12px;font-weight:600;cursor:pointer;}
 #mpg .lt-cloud{margin:0 0 10px;font-size:12.5px;color:#9aa2b1;}
 #mpg .lt-cloud.ok{color:#3fbf7f;} #mpg .lt-cloud.warn{color:#e8b84b;}
 #mpg .lt-off{margin:12px 0 0;text-align:center;font-size:12.5px;}
 #mpg .lt-off a{color:#60a5fa;text-decoration:underline;}
-#mpg .box{max-height:100vh;overflow-y:auto;}
+@media(max-width:420px){ #mpg .lt-tab{font-size:12px;padding:9px 2px;} }
+</style>
+<style id="mp-login-themes">
+/* Block tab = SamMPurna look (dark brown + orange); Facility tab = Autoclave look (white card on blue gradient) */
+#mpg .lt-go{margin-top:2px;}
+#mpg .viewpw{width:auto;background:transparent;padding:0;margin:-4px 0 10px;font-weight:500;font-size:12.5px;text-decoration:underline;border:0;cursor:pointer;min-height:0;}
+#mpg:not([data-theme="block"]) .viewpw{display:none;}
+#mpg[data-theme="block"]{background:#120c08;}
+#mpg[data-theme="block"] .box{background:#1c130c;border-color:#2e2015;color:#f5e9de;font-family:'IBM Plex Sans',Segoe UI,Arial,sans-serif;}
+#mpg[data-theme="block"] h2{color:#fb923c;}
+#mpg[data-theme="block"] .lt-help,#mpg[data-theme="block"] .lt-cloud{color:#c9a58c;}
+#mpg[data-theme="block"] .lt-cloud.ok{color:#3fbf7f;} #mpg[data-theme="block"] .lt-cloud.warn{color:#e8b84b;}
+#mpg[data-theme="block"] select,#mpg[data-theme="block"] input{background:#120c08;border-color:#2e2015;color:#f5e9de;}
+#mpg[data-theme="block"] .lt-tabs{background:#120c08;border-color:#2e2015;}
+#mpg[data-theme="block"] .lt-tab{color:#c9a58c;}
+#mpg[data-theme="block"] .lt-tab.active,#mpg[data-theme="block"] .lt-go{background:#f97316;color:#fff;}
+#mpg[data-theme="block"] .viewpw,#mpg[data-theme="block"] .lt-off a{color:#fb923c;}
+#mpg[data-theme="block"] .lt-pane[data-pane="block"] .lt-f label{display:none;}
+#mpg[data-theme="facility"]{background:linear-gradient(135deg,#081d33,#0d3b63 55%,#0e7c9e);padding:20px;box-sizing:border-box;}
+#mpg[data-theme="facility"] .box{background:#fff;border:0;border-radius:14px;padding:26px 26px 20px;width:min(380px,100%);box-shadow:0 20px 50px rgba(0,0,0,.35);color:#101c28;}
+#mpg[data-theme="facility"] h2{color:#0d3b63;font-size:19px;}
+#mpg[data-theme="facility"] .lt-help,#mpg[data-theme="facility"] .lt-cloud{color:#5c7488;font-size:12.5px;}
+#mpg[data-theme="facility"] .lt-cloud.ok{color:#1e8a55;} #mpg[data-theme="facility"] .lt-cloud.warn{color:#b26a00;}
+#mpg[data-theme="facility"] .lt-f label{font-size:11.5px;font-weight:700;color:#101c28;}
+#mpg[data-theme="facility"] select,#mpg[data-theme="facility"] input{background:#fff;border:1px solid #c5d2dc;color:#101c28;padding:9px 10px;}
+#mpg[data-theme="facility"] .lt-tabs{background:#eef2f5;border:0;padding:3px;}
+#mpg[data-theme="facility"] .lt-tab{color:#5c7488;border-radius:8px;}
+#mpg[data-theme="facility"] .lt-tab.active{background:#fff;color:#0d3b63;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+#mpg[data-theme="facility"] .lt-eye{color:#0d3b63;font-weight:700;}
+#mpg[data-theme="facility"] .lt-go{background:linear-gradient(135deg,#1f6f9f,#0d3b63);border-radius:9px;box-shadow:0 4px 12px rgba(18,90,134,.25);}
+#mpg[data-theme="facility"] .lt-off a{color:#1f6f9f;}
+#mpg[data-theme="facility"] .err{color:#b3261e;}
 </style>
 <style id="mp-mobile-css">
   /* ---- Mobile hardening (GitHub Pages / phones) ---- */
@@ -235,21 +275,32 @@ header.has-lock h1{margin-top:34px;}
     #mpg .box{padding:22px 18px;}
     #mpg select,#mpg input{font-size:16px;min-height:46px;}
     #mpg button{min-height:46px;}
-    #mpg button.viewpw{min-height:0;padding:6px 0;}
   }
   @media(max-width:360px){ .cloud-row{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
-<div id="mpg"><div class="box">
+<div id="mpg"><div class="box lt">
 <h2>MPCDSR Dashboard</h2>
-<p>Select your district (and your block or facility, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
-<select id="mpgDist"></select><select id="mpgBlock" style="display:none"></select><select id="mpgFac" style="display:none"></select>
-<input id="mpgPass" type="password" placeholder="Passcode" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="viewpw" id="mpgEye" aria-pressed="false">Show passcode</button>
+<div class="lt-tabs" role="tablist">
+<button type="button" class="lt-tab active" role="tab" data-pane="district">District / State</button>
+<button type="button" class="lt-tab" role="tab" data-pane="block">Block</button>
+<button type="button" class="lt-tab" role="tab" data-pane="facility">Facility</button>
+<button type="button" class="lt-tab" role="tab" data-pane="sncu">SNCU / NBSU</button>
+</div>
+<p class="lt-help" id="ltHelp"></p>
+<div class="lt-pane" data-pane="district"><div class="lt-f"><label>District / State</label><select id="ltDistSel"><option value="">Select…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="block" hidden><div class="lt-f"><label>District</label><select id="ltBlkDist" aria-label="District"><option value="">Select district…</option></select></div><div class="lt-f" id="ltBlkWrap" style="display:none"><label>Block</label><select id="ltBlkSel" aria-label="Block"><option value="">Select block…</option></select></div><div class="lt-f"><label>Passcode</label><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="viewpw" id="ltBlkView">View passcode</button></div></div>
+<div class="lt-pane" data-pane="facility" hidden><div class="lt-f"><label>District</label><select id="ltFacDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Facility type</label><select id="ltFacType"><option value="">Select facility type…</option></select></div><div class="lt-f"><label>Facility</label><select id="ltFacSel"><option value="">Select facility…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="sncu" hidden><div class="lt-f"><label>District</label><select id="ltSncuDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Unit type</label><select id="ltSncuType"><option value="">Select unit type…</option></select></div><div class="lt-f"><label>Unit</label><select id="ltSncuSel"><option value="">Select unit…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
 <div class="lt-cloud" id="mpgCloud">☁ Checking cloud…</div>
 <div class="err" id="mpgErr"></div>
-<button type="button" id="mpgBtn">Open dashboard</button>
+<button type="button" id="mpgGo" class="lt-go">Open dashboard</button>
 <p class="lt-off"><a href="#" id="mpgOffline">Use offline (no cloud)</a></p>
+<div id="mpgLegacy" style="display:none" aria-hidden="true">
+<select id="mpgDist"></select><select id="mpgBlock"></select><select id="mpgSncu"></select>
+<input id="mpgPass" type="password" autocomplete="off"><button type="button" id="mpgEye">Show</button><button type="button" id="mpgBtn">Open dashboard</button>
+</div>
 </div></div>
 <header>
   <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-fac" id="mpFacMgr" style="display:none" onclick="mpOpenFacilityManager()" title="Create facility logins (SNCU/NBSU and all facilities) for this district">🏥 Facility logins</button><button type="button" class="lk-text" onclick="mpDistrictLogout()">Log out</button><button type="button" class="lk-icon" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
@@ -2589,8 +2640,8 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     const c = sel.value, p = document.getElementById('mpgPass').value.trim().toUpperCase();
     const err = document.getElementById('mpgErr'); err.style.color='';
     if(!c){ err.textContent='Please select your district.'; return; }
-    if(c!=='ADMIN' && ((facSel.style.display!=='none' && facSel.value) || (blockSel.style.display!=='none' && blockSel.value))){
-      const bv = (facSel.style.display!=='none' && facSel.value) ? facSel.value : blockSel.value;
+    if(c!=='ADMIN' && ((sncuSel.style.display!=='none' && sncuSel.value) || (blockSel.style.display!=='none' && blockSel.value))){
+      const bv = (sncuSel.style.display!=='none' && sncuSel.value) ? sncuSel.value : blockSel.value;
       if(bv.startsWith('f:')){ const k = bv.slice(2), i = k.indexOf('|'); tryFacilityLogin(c, k.slice(0,i), k.slice(i+1), p); return; }
       tryBlockLogin(c, bv.replace(/^b:/,''), p); return;
     }
@@ -2605,8 +2656,8 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c,h:hash,p})); }catch(e){}
     startApp();
   }
-  // ---- block login (SamMPurna flow): district -> block (default = district login) -> facility (optional) -> passcode
-  const blockSel = document.getElementById('mpgBlock'), facSel = document.getElementById('mpgFac');
+  // ---- block login (same layout as SamMpurna): district -> optional block -> passcode
+  const blockSel = document.getElementById('mpgBlock'), sncuSel = document.getElementById('mpgSncu');
   const escH = x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   function blocksFor(code){
     const m = new Map();
@@ -2614,31 +2665,18 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     const st = mpBlockStoreGet()[code]; ((st&&st.blocks)||[]).forEach(bb=>{ const k=normalizeBlock(bb.block); if(!m.has(k)) m.set(k,bb.block); });
     return Array.from(m.values()).sort((x,y)=>x.localeCompare(y));
   }
-  const FAC_TYPE_FIRST = ['SNCU / NBSU','SC','PHC'];   // SNCU/NBSU, then SC and PHC, then the rest alphabetically
-  const facTypeSort = (a,b)=>{ const ia=FAC_TYPE_FIRST.indexOf(a), ib=FAC_TYPE_FIRST.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); };
   function fillBlockSel(){
-    const c = sel.value;
-    document.getElementById('mpgErr').textContent = '';
-    if(!c || c==='ADMIN'){ blockSel.style.display='none'; blockSel.innerHTML=''; facSel.style.display='none'; facSel.innerHTML=''; return; }
-    const list = blocksFor(c), facs = mpFacEntries(c);
-    blockSel.innerHTML = '<option value="">District login (all blocks)</option>' + list.map(n=>'<option value="b:'+escH(n)+'">Block: '+escH(n)+'</option>').join('');
-    blockSel.style.display = '';
-    const groups = {};
-    facs.forEach(f=>{
-      const g = f.kind==='FACILITY' ? (FT_LABEL[f.ft]||'Facility') : 'SNCU / NBSU';
-      const v = 'f:'+f.kind+'|'+(f.kind==='FACILITY'?f.fc:f.name);
-      const t = f.kind==='FACILITY' ? f.name+' ('+f.fc+')' : f.kind+': '+f.name;
-      (groups[g] = groups[g] || []).push({v, t});
-    });
-    const gk = Object.keys(groups).sort(facTypeSort);
-    if(!gk.length){ facSel.style.display='none'; facSel.innerHTML=''; return; }
-    facSel.innerHTML = '<option value="">Facility login (optional)</option>' + gk.map(g=>
-      '<optgroup label="'+escH(g)+'">'+groups[g].sort((x,y)=>x.t.localeCompare(y.t)).map(o=>'<option value="'+escH(o.v)+'">'+escH(o.t)+'</option>').join('')+'</optgroup>').join('');
-    facSel.style.display = '';
+    const c = sel.value, list = (c && c!=='ADMIN') ? blocksFor(c) : [];
+    const facs = (c && c!=='ADMIN') ? mpFacEntries(c).slice().sort((x,y)=>((x.kind==='FACILITY'?'1':'0')+(FT_LABEL[x.ft]||x.kind)+x.name).localeCompare((y.kind==='FACILITY'?'1':'0')+(FT_LABEL[y.ft]||y.kind)+y.name)) : [];
+    if(!c || c==='ADMIN'){ blockSel.style.display='none'; blockSel.innerHTML=''; sncuSel.style.display='none'; sncuSel.innerHTML=''; return; }
+    const opt = f=>'<option value="f:'+escH(f.kind)+'|'+escH(f.kind==='FACILITY'?f.fc:f.name)+'">'+escH(f.kind==='FACILITY'?(FT_LABEL[f.ft]||'Facility'):f.kind)+': '+escH(f.name)+(f.kind==='FACILITY'?' ('+escH(f.fc)+')':'')+'</option>';
+    blockSel.innerHTML = '<option value="">Block / Facility (leave blank for district login)</option>' + list.map(n=>'<option value="b:'+escH(n)+'">Block: '+escH(n)+'</option>').join('') + facs.filter(f=>f.kind==='FACILITY').map(opt).join('');
+    sncuSel.innerHTML = '<option value="">SNCU / NBSU (leave blank if not an SNCU/NBSU)</option>' + facs.filter(f=>f.kind!=='FACILITY').map(opt).join('');
+    blockSel.style.display = ''; sncuSel.style.display = '';
   }
-  // only one scope at a time: choosing a block clears the facility and vice versa
-  blockSel.addEventListener('change', ()=>{ if(blockSel.value) facSel.value=''; document.getElementById('mpgErr').textContent=''; });
-  facSel.addEventListener('change', ()=>{ if(facSel.value) blockSel.value=''; document.getElementById('mpgErr').textContent=''; });
+  // only one scope at a time: choosing a block/facility clears SNCU/NBSU and vice versa
+  blockSel.addEventListener('change', ()=>{ if(blockSel.value) sncuSel.value=''; });
+  sncuSel.addEventListener('change', ()=>{ if(sncuSel.value) blockSel.value=''; });
   sel.addEventListener('change', fillBlockSel);
   async function tryBlockLogin(code, block, p){
     const err = document.getElementById('mpgErr');
@@ -2690,8 +2728,9 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     eye.addEventListener('click', ()=>{
       const show = inp.type==='password';
       inp.type = show ? 'text' : 'password';
-      eye.textContent = window.mpT ? window.mpT(show ? 'Hide passcode' : 'Show passcode') : (show ? 'Hide passcode' : 'Show passcode');
+      eye.textContent = show ? 'Hide' : 'Show';
       eye.setAttribute('aria-pressed', String(show));
+      eye.setAttribute('aria-label', show ? 'Hide passcode' : 'Show passcode');
       inp.focus();
     });
   })();
@@ -2711,11 +2750,98 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   }catch(e){}
 })();
 
-// ---- Login page cloud status line
-(function loginCloudStatus(){
-  const el = document.getElementById('mpgCloud'); if(!el) return;
-  const set = (cls,t)=>{ el.className='lt-cloud '+cls; el.textContent=t; };
+// ---- Login page tabs (District / State | Block | Facility | SNCU / NBSU): drives the login logic above through its hidden controls.
+(function loginTabs(){
+  const $ = id=>document.getElementById(id);
+  const L = {dist:$('mpgDist'), blk:$('mpgBlock'), sncu:$('mpgSncu'), pass:$('mpgPass'), btn:$('mpgBtn')};
+  const err = $('mpgErr');
+  const esc = x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const HELP = {
+    district:'Choose your district (or State) and enter the password. A district sees its own district; State sees all districts.',
+    block:'Select your district, then your block, and enter your passcode. You will only see your own block\'s records.',
+    facility:'Choose district, facility type and facility, then enter the facility passcode. You will only see your own facility\'s data.',
+    sncu:'Choose district, SNCU or NBSU and your unit, then enter the unit passcode. You will only see your own unit\'s data.'
+  };
+  const distAll = Array.from(L.dist.options).filter(o=>o.value);
+  const optHtml = (ph, list)=>'<option value="">'+esc(ph)+'</option>'+list.map(o=>'<option value="'+esc(o.v)+'">'+esc(o.t)+'</option>').join('');
+  $('ltDistSel').innerHTML = optHtml('Select…', distAll.map(o=>({v:o.value,t:o.textContent})));
+  ['ltBlkDist','ltFacDist','ltSncuDist'].forEach(i=>{ $(i).innerHTML = optHtml('Select…', distAll.filter(o=>o.value!=='ADMIN').map(o=>({v:o.value,t:o.textContent}))); });
+  let active = 'district';
+  function showPane(name){
+    active = name; err.textContent=''; err.style.color='';
+    document.querySelectorAll('#mpg .lt-tab').forEach(b=>b.classList.toggle('active', b.dataset.pane===name));
+    document.querySelectorAll('#mpg .lt-pane').forEach(p=>{ p.hidden = p.dataset.pane!==name; });
+    $('ltHelp').textContent = HELP[name];
+    $('mpg').setAttribute('data-theme', name==='block' ? 'block' : name==='facility' ? 'facility' : 'default');
+    $('mpgGo').textContent = name==='facility' ? 'Sign in' : 'Open dashboard';
+  }
+  document.querySelectorAll('#mpg .lt-tab').forEach(b=>b.addEventListener('click', ()=>showPane(b.dataset.pane)));
+  showPane('district');
+  // fill the legacy (hidden) block/facility/SNCU lists for a district, then read the options back
+  function legacyFor(code){ L.dist.value = code; L.dist.dispatchEvent(new Event('change')); }
+  const labelParts = t=>{ const m = String(t).match(/^(.*?):\s*([\s\S]*)$/); return m ? {k:m[1], n:m[2]} : {k:'', n:t}; };
+  const TYPE_FIRST = ['SC','PHC'];   // SC and PHC first, the rest alphabetically
+  const typeSort = (a,b)=>{ const ia=TYPE_FIRST.indexOf(a), ib=TYPE_FIRST.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); };
+  let facByType = {}, sncuByType = {};
+  $('ltBlkDist').addEventListener('change', function(){
+    legacyFor(this.value);
+    const bo = Array.from(L.blk.options).filter(o=>o.value.indexOf('b:')===0);
+    $('ltBlkSel').innerHTML = optHtml(this.value && !bo.length ? 'No block logins for this district' : 'Select block…', bo.map(o=>({v:o.value, t:o.textContent.replace(/^Block:\s*/,'')})));
+  });
+  $('ltBlkDist').addEventListener('change', function(){ $('ltBlkWrap').style.display = this.value ? '' : 'none'; });   // block list appears once a district is chosen
+  { const vb = $('ltBlkView'); vb.addEventListener('click', function(){ const inp = vb.parentNode.querySelector('input'); const show = inp.type==='password'; inp.type = show ? 'text' : 'password'; vb.textContent = show ? 'Hide passcode' : 'View passcode'; }); }
+  $('ltFacDist').addEventListener('change', function(){
+    legacyFor(this.value); facByType = {};
+    Array.from(L.blk.options).filter(o=>o.value.indexOf('f:FACILITY|')===0).forEach(o=>{ const p = labelParts(o.textContent); const k = p.k||'Facility'; (facByType[k] = facByType[k] || []).push({v:o.value, t:p.n}); });
+    const types = Object.keys(facByType).sort(typeSort);
+    $('ltFacType').innerHTML = optHtml(this.value && !types.length ? 'No facility logins for this district' : 'Select facility type…', types.map(t=>({v:t,t:t})));
+    $('ltFacSel').innerHTML = optHtml('Select facility…', []);
+  });
+  $('ltFacType').addEventListener('change', function(){ $('ltFacSel').innerHTML = optHtml('Select facility…', (facByType[this.value]||[]).slice().sort((x,y)=>x.t.localeCompare(y.t))); });
+  $('ltSncuDist').addEventListener('change', function(){
+    legacyFor(this.value); sncuByType = {};
+    Array.from(L.sncu.options).filter(o=>o.value.indexOf('f:')===0).forEach(o=>{ const p = labelParts(o.textContent); (sncuByType[p.k] = sncuByType[p.k] || []).push({v:o.value, t:p.n}); });
+    const types = Object.keys(sncuByType).sort();
+    $('ltSncuType').innerHTML = optHtml(this.value && !types.length ? 'No SNCU / NBSU logins for this district' : 'Select unit type…', types.map(t=>({v:t,t:t})));
+    $('ltSncuSel').innerHTML = optHtml('Select unit…', []);
+  });
+  $('ltSncuType').addEventListener('change', function(){ $('ltSncuSel').innerHTML = optHtml('Select unit…', sncuByType[this.value]||[]); });
+  // Show / Hide passcode buttons
+  document.querySelectorAll('#mpg .lt-eye').forEach(eye=>eye.addEventListener('click', ()=>{
+    const inp = eye.parentNode.querySelector('input'); const show = inp.type==='password';
+    inp.type = show ? 'text' : 'password'; eye.textContent = show ? 'Hide' : 'Show'; eye.setAttribute('aria-pressed', String(show)); inp.focus();
+  }));
+  function go(){
+    err.textContent=''; err.style.color='';
+    const pane = document.querySelector('#mpg .lt-pane[data-pane="'+active+'"]');
+    const pass = pane.querySelector('.lt-pass').value;
+    let code, scope = '';
+    if(active==='district'){
+      code = $('ltDistSel').value; if(!code){ err.textContent='Please select your district or State.'; return; }
+    } else if(active==='block'){
+      code = $('ltBlkDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      scope = $('ltBlkSel').value; if(!scope){ err.textContent='Please select your block.'; return; }
+    } else if(active==='facility'){
+      code = $('ltFacDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      if(!$('ltFacType').value){ err.textContent='Please select the facility type.'; return; }
+      scope = $('ltFacSel').value; if(!scope){ err.textContent='Please select your facility.'; return; }
+    } else {
+      code = $('ltSncuDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      if(!$('ltSncuType').value){ err.textContent='Please select SNCU or NBSU.'; return; }
+      scope = $('ltSncuSel').value; if(!scope){ err.textContent='Please select your unit.'; return; }
+    }
+    legacyFor(code);
+    L.blk.value = (active==='block' || active==='facility') ? scope : '';
+    L.sncu.value = active==='sncu' ? scope : '';
+    L.pass.value = pass;
+    L.btn.click();
+  }
+  $('mpgGo').addEventListener('click', go);
+  document.querySelectorAll('#mpg .lt-pass').forEach(i=>i.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); }));
+  // cloud status line
   (async function(){
+    const el = $('mpgCloud');
+    const set = (cls,t)=>{ el.className='lt-cloud '+cls; el.textContent=t; };
     if(typeof REC_URL==='undefined' || !REC_URL){ set('warn','☁ Cloud not configured — use offline mode'); return; }
     if(typeof fetch!=='function'){ set('',''); return; }
     try{
@@ -6083,7 +6209,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 </script>
 <script>
 (function(){
-  var DICT = {"Facility login (optional)": "ସଂସ୍ଥା ଲଗଇନ୍ (ଇଚ୍ଛାଧୀନ)", "MPCDSR Dashboard": "MPCDSR ଡ୍ୟାସବୋର୍ଡ", "Select your district (and your block or facility, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.": "ଆପଣଙ୍କ ଜିଲ୍ଲା (ଏବଂ ଆପଣଙ୍କର ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା ଲଗଇନ୍ ଥିଲେ ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା) ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ। ଆପଣ କେବଳ ନିଜ ଜିଲ୍ଲା, ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥାର ରେକର୍ଡ ଦେଖିପାରିବେ।", "Show": "ଦେଖାନ୍ତୁ", "Hide": "ଲୁଚାନ୍ତୁ", "Open dashboard": "ଡ୍ୟାସବୋର୍ଡ ଖୋଲନ୍ତୁ", "Use offline (no cloud)": "ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ନାହିଁ)", "Viewing:": "ଦେଖୁଛନ୍ତି:", "Facility logins": "ସଂସ୍ଥା ଲଗଇନ୍", "Log out": "ଲଗ୍ ଆଉଟ୍", "Maternal & Child Death Review — Dashboard": "ମାତୃ ଓ ଶିଶୁ ମୃତ୍ୟୁ ସମୀକ୍ଷା — ଡ୍ୟାସବୋର୍ଡ", "Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.": "ଜିଲ୍ଲାୱାରୀ ଧାରା, କାରଣ ଓ ରିପୋର୍ଟିଂ ସମ୍ପୂର୍ଣ୍ଣତା ଦେଖିବା ପାଇଁ MDR ଲାଇନ୍-ଲିଷ୍ଟିଂ ୱାର୍କବୁକ୍ ଏବଂ/କିମ୍ବା CDR ସାରାଂଶ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "MDR (Maternal Deaths)": "MDR (ମାତୃ ମୃତ୍ୟୁ)", "CDR (Child Deaths)": "CDR (ଶିଶୁ ମୃତ୍ୟୁ)", "You are offline - showing the saved app. Cloud records need a connection.": "ଆପଣ ଅଫଲାଇନ୍ ଅଛନ୍ତି - ସେଭ୍ ହୋଇଥିବା ଆପ୍ ଦେଖାଯାଉଛି। କ୍ଲାଉଡ୍ ରେକର୍ଡ ପାଇଁ ଇଣ୍ଟରନେଟ୍ ଦରକାର।", "Install app": "ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Passcode": "ପାସକୋଡ୍", "Show passcode": "ପାସକୋଡ୍ ଦେଖାନ୍ତୁ", "Hide passcode": "ପାସକୋଡ୍ ଲୁଚାନ୍ତୁ", "Dismiss": "ବନ୍ଦ କରନ୍ତୁ", "Install MPCDSR app": "MPCDSR ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Create facility logins (SNCU/NBSU and all facilities) for this district": "ଏହି ଜିଲ୍ଲା ପାଇଁ ସଂସ୍ଥା ଲଗଇନ୍ ତିଆରି କରନ୍ତୁ (SNCU/NBSU ଓ ସମସ୍ତ ସଂସ୍ଥା)", "Select State / District…": "ରାଜ୍ୟ / ଜିଲ୍ଲା ବାଛନ୍ତୁ…", "Block / Facility (leave blank for district login)": "ବ୍ଲକ୍ / ସଂସ୍ଥା (ଜିଲ୍ଲା ଲଗଇନ୍ ପାଇଁ ଖାଲି ରଖନ୍ତୁ)", "SNCU / NBSU (leave blank if not an SNCU/NBSU)": "SNCU / NBSU (SNCU/NBSU ନହେଲେ ଖାଲି ରଖନ୍ତୁ)", "State / Admin (all districts)": "ରାଜ୍ୟ / ଆଡମିନ୍ (ସମସ୍ତ ଜିଲ୍ଲା)", "District login (all blocks)": "ଜିଲ୍ଲା ଲଗଇନ୍ (ସମସ୍ତ ବ୍ଲକ୍)", "All districts (State)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ)", "Offline mode (no cloud) — data stays on this device": "ଅଫଲାଇନ୍ ମୋଡ୍ (କ୍ଲାଉଡ୍ ନାହିଁ) — ତଥ୍ୟ ଏହି ଡିଭାଇସ୍‌ରେ ରହିବ", "Save records to cloud": "ରେକର୍ଡ କ୍ଲାଉଡ୍‌ରେ ସେଭ୍ କରନ୍ତୁ", "Load latest": "ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ", "Delete cloud records": "କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରନ୍ତୁ", "Records": "ରେକର୍ଡ", "Click to upload": "ଅପଲୋଡ୍ କରିବାକୁ କ୍ଲିକ୍ କରନ୍ତୁ", "workbook (.xlsx)": "ୱାର୍କବୁକ୍ (.xlsx)", "No file selected": "କୌଣସି ଫାଇଲ୍ ବଛାଯାଇନାହିଁ", "aggregate workbook": "ସାରାଂଶ ୱାର୍କବୁକ୍", "raw line-listing": "ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ", "Optional:": "ବୈକଳ୍ପିକ:", "District/Month-wise Delivery data": "ଜିଲ୍ଲା/ମାସ ଅନୁସାରେ ପ୍ରସବ ତଥ୍ୟ", "Year": "ବର୍ଷ", "All Years": "ସମସ୍ତ ବର୍ଷ", "Duration: From": "ଅବଧି: ଠାରୁ", "To": "ପର୍ଯ୍ୟନ୍ତ", "Month": "ମାସ", "All Districts (state total)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ ମୋଟ)", "All Blocks": "ସମସ୍ତ ବ୍ଲକ୍", "District": "ଜିଲ୍ଲା", "Block": "ବ୍ଲକ୍", "Download XLSX + records (this month)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ଏହି ମାସ)", "Download XLSX + records (all months)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ସମସ୍ତ ମାସ)", "Download XLSX + records (block-wise, month-wise)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ବ୍ଲକ୍-ଅନୁସାରେ, ମାସ-ଅନୁସାରେ)", "Deceased list for SamMpurna (ANC)": "ସମ୍ପୂର୍ଣ୍ଣା (ANC) ପାଇଁ ମୃତକଙ୍କ ତାଲିକା", "Clear": "ଖାଲି କରନ୍ତୁ", "Upload a workbook to see the dashboard.": "ଡ୍ୟାସବୋର୍ଡ ଦେଖିବାକୁ ଏକ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "Upload the line-listing (or load saved records from the cloud) to search records.": "ରେକର୍ଡ ଖୋଜିବା ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ (କିମ୍ବା କ୍ଲାଉଡ୍‌ରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଲୋଡ୍ କରନ୍ତୁ)।", "No matching records in the line-listing for this selection": "ଏହି ଚୟନ ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂରେ ମେଳ ଖାଉଥିବା ରେକର୍ଡ ନାହିଁ", "Name of the Deceased Mother": "ମୃତ ମାତାଙ୍କ ନାମ", "Name & address of the Husband / Guardian": "ସ୍ୱାମୀ / ଅଭିଭାବକଙ୍କ ନାମ ଓ ଠିକଣା", "Age": "ବୟସ", "Date of death": "ମୃତ୍ୟୁ ତାରିଖ", "Place": "ସ୍ଥାନ", "Death period": "ମୃତ୍ୟୁ ସମୟକାଳ", "Direct cause": "ସିଧାସଳଖ କାରଣ", "Associated cause": "ସହଯୋଗୀ କାରଣ", "Name of facility": "ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ", "Days: Delivery→Death": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ", "Days: Delivery→Death (Post natal)": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ (ପ୍ରସବୋତ୍ତର)", "High risk pregnancy": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା", "Risk details": "ବିପଦର ବିବରଣୀ", "Gravida": "ଗ୍ରାଭିଡା", "Para": "ପାରା", "PHC Area": "PHC ଅଞ୍ଚଳ", "Sub Centre": "ଉପକେନ୍ଦ୍ର", "Reporting month/year": "ରିପୋର୍ଟିଂ ମାସ/ବର୍ଷ", "Gender": "ଲିଙ୍ଗ", "Caste": "ଜାତି", "Place of death": "ମୃତ୍ୟୁ ସ୍ଥାନ", "Date of birth": "ଜନ୍ମ ତାରିଖ", "Age category": "ବୟସ ବର୍ଗ", "Birth weight (Kg)": "ଜନ୍ମ ଓଜନ (କିଗ୍ରା)", "Probable cause (major)": "ସମ୍ଭାବ୍ୟ କାରଣ (ମୁଖ୍ୟ)", "Probable cause (other)": "ସମ୍ଭାବ୍ୟ କାରଣ (ଅନ୍ୟ)", "Specify other direct cause": "ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ", "New entry": "ନୂଆ ଏଣ୍ଟ୍ରି", "Add record": "ରେକର୍ଡ ଯୋଡ଼ନ୍ତୁ", "Clear form": "ଫର୍ମ ଖାଲି କରନ୍ତୁ", "View": "ଦେଖନ୍ତୁ", "Edit": "ସମ୍ପାଦନ", "Close": "ବନ୍ଦ କରନ୍ତୁ", "— select —": "— ବାଛନ୍ତୁ —", "Save changes": "ପରିବର୍ତ୍ତନ ସେଭ୍ କରନ୍ତୁ", "Cancel": "ବାତିଲ୍", "No records loaded yet — upload a line-listing or use ☁ Load latest.": "ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ରେକର୍ଡ ଲୋଡ୍ ହୋଇନାହିଁ — ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ କିମ୍ବା ☁ ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ ବ୍ୟବହାର କରନ୍ତୁ।", "Total deaths": "ମୋଟ ମୃତ୍ୟୁ", "Total death": "ମୋଟ ମୃତ୍ୟୁ", "Facility deaths": "ସଂସ୍ଥାରେ ମୃତ୍ୟୁ", "Home deaths": "ଘରେ ମୃତ୍ୟୁ", "Transit deaths": "ରାସ୍ତାରେ ମୃତ୍ୟୁ", "Male": "ପୁରୁଷ", "Female": "ମହିଳା", "Neonatal (0-28 days)": "ନବଜାତ (0-28 ଦିନ)", "Infant": "ଶିଶୁ", "Child": "ପିଲା", "Other cause": "ଅନ୍ୟ କାରଣ", "HRP deaths": "HRP ମୃତ୍ୟୁ", "Non-HRP deaths": "ଅଣ-HRP ମୃତ୍ୟୁ", "Antenatal deaths": "ପ୍ରସବପୂର୍ବ ମୃତ୍ୟୁ", "Intranatal deaths": "ପ୍ରସବକାଳୀନ ମୃତ୍ୟୁ", "Post natal deaths": "ପ୍ରସବୋତ୍ତର ମୃତ୍ୟୁ", "Post Abortion deaths": "ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ ମୃତ୍ୟୁ", "Total deliveries (from Delivery data upload)": "ମୋଟ ପ୍ରସବ (ପ୍ରସବ ତଥ୍ୟ ଅପଲୋଡ୍‌ରୁ)", "Total (All Months)": "ମୋଟ (ସମସ୍ତ ମାସ)", "Types of High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP) ର ପ୍ରକାର", "(click a card to see the matching records)": "(ମେଳ ଖାଉଥିବା ରେକର୍ଡ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Place of death breakdown": "ମୃତ୍ୟୁ ସ୍ଥାନ ଅନୁସାରେ ବିଭାଜନ", "Age-wise breakdown": "ବୟସ ଅନୁସାରେ ବିଭାଜନ", "Cause of death breakdown": "ମୃତ୍ୟୁ କାରଣ ଅନୁସାରେ ବିଭାଜନ", "(click a card to see the district-wise split)": "(ଜିଲ୍ଲା ଅନୁସାରେ ବିଭାଜନ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Death period breakdown (Antenatal / Intranatal / Post natal / Post Abortion)": "ମୃତ୍ୟୁ ସମୟକାଳ ଅନୁସାରେ ବିଭାଜନ (ପ୍ରସବପୂର୍ବ / ପ୍ରସବକାଳୀନ / ପ୍ରସବୋତ୍ତର / ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ)", "District-wise comparison": "ଜିଲ୍ଲା ଅନୁସାରେ ତୁଳନା", "Metric": "ମାପକ", "Sort": "କ୍ରମ", "High → Low": "ଅଧିକରୁ କମ୍", "A → Z": "A → Z", "Block-wise comparison": "ବ୍ଲକ୍ ଅନୁସାରେ ତୁଳନା", "(from line-listing upload — select a District above to view — click a block card to see its matching records)": "(ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍‌ରୁ — ଦେଖିବାକୁ ଉପରେ ଜିଲ୍ଲା ବାଛନ୍ତୁ — ମେଳ ଖାଉଥିବା ରେକର୍ଡ ପାଇଁ ବ୍ଲକ୍ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Breakdown": "ବିଭାଜନ", "Columns to compare (pick 2+)": "ତୁଳନା ପାଇଁ ସ୍ତମ୍ଭ (2 ବା ଅଧିକ ବାଛନ୍ତୁ)", "Month-wise total deaths": "ମାସ ଅନୁସାରେ ମୋଟ ମୃତ୍ୟୁ", "Quarter-wise comparison": "ତ୍ରୈମାସିକ ଅନୁସାରେ ତୁଳନା", "Trend across months": "ମାସ ମାସ ଧାରା", "Metric label to trend (matched by name across month sheets)": "ଧାରା ପାଇଁ ମାପକ ନାମ (ମାସ ସିଟ୍ ମଧ୍ୟରେ ନାମ ଅନୁସାରେ ମେଳ)", "Build trend": "ଧାରା ତିଆରି କରନ୍ତୁ", "Full data table": "ସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ ତାଲିକା", "Cause of death columns": "ମୃତ୍ୟୁ କାରଣ ସ୍ତମ୍ଭ", "Place of death columns": "ମୃତ୍ୟୁ ସ୍ଥାନ ସ୍ତମ୍ଭ", "Age not stated": "ବୟସ ଉଲ୍ଲେଖ ନାହିଁ", "Upload the optional raw line-listing to see individual records here.": "ଏଠାରେ ବ୍ୟକ୍ତିଗତ ରେକର୍ଡ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ।", "View records": "ରେକର୍ଡ ଦେଖନ୍ତୁ", "No HRP records for this selection": "ଏହି ଚୟନ ପାଇଁ କୌଣସି HRP ରେକର୍ଡ ନାହିଁ", "No districts reported this age group": "ଏହି ବୟସ ବର୍ଗ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/age group": "ଏହି ଜିଲ୍ଲା/ବୟସ ବର୍ଗ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "No districts reported this cause": "ଏହି କାରଣ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/cause": "ଏହି ଜିଲ୍ଲା/କାରଣ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "Upload the optional raw line-listing to see this breakdown": "ଏହି ବିଭାଜନ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ", "Districts / rows": "ଜିଲ୍ଲା / ଧାଡ଼ି", "Blocks (from line-listing)": "ବ୍ଲକ୍ (ଲାଇନ୍-ଲିଷ୍ଟିଂରୁ)", "Institutional deliveries": "ସଂସ୍ଥାଗତ ପ୍ରସବ", "Home deliveries": "ଘରୋଇ ପ୍ରସବ", "Non-HRP": "ଅଣ-HRP", "High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP)", "< 1 month": "< 1 ମାସ", "1–3 months": "1–3 ମାସ", "3–12 months": "3–12 ମାସ", "Incorrect passcode.": "ଭୁଲ୍ ପାସକୋଡ୍।", "Please select your district.": "ଦୟାକରି ଆପଣଙ୍କ ଜିଲ୍ଲା ବାଛନ୍ତୁ।", "Enter your block passcode.": "ଆପଣଙ୍କ ବ୍ଲକ୍ ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Enter your facility passcode.": "ଆପଣଙ୍କ ସଂସ୍ଥାର ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Checking…": "ଯାଞ୍ଚ ହେଉଛି…", "Block login not found.": "ବ୍ଲକ୍ ଲଗଇନ୍ ମିଳିଲା ନାହିଁ।", "Checking previously saved records...": "ପୂର୍ବରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "Checking cloud for records...": "କ୍ଲାଉଡ୍‌ରେ ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "No cloud records to delete.": "ଡିଲିଟ୍ କରିବାକୁ କ୍ଲାଉଡ୍ ରେକର୍ଡ ନାହିଁ।", "Delete cancelled.": "ଡିଲିଟ୍ ବାତିଲ୍ ହେଲା।", "Load a file first.": "ପ୍ରଥମେ ଏକ ଫାଇଲ୍ ଲୋଡ୍ କରନ୍ତୁ।", "Name of the Deceased Mother is required.": "ମୃତ ମାତାଙ୍କ ନାମ ଆବଶ୍ୟକ।", "Block is required.": "ବ୍ଲକ୍ ଆବଶ୍ୟକ।", "Date of birth must be dd-mm-yyyy.": "ଜନ୍ମ ତାରିଖ dd-mm-yyyy ଫର୍ମାଟରେ ହେବା ଆବଶ୍ୟକ।", "Date of birth cannot be in the future.": "ଜନ୍ମ ତାରିଖ ଭବିଷ୍ୟତରେ ହୋଇପାରିବ ନାହିଁ।", "Date of birth cannot be after the date of death.": "ଜନ୍ମ ତାରିଖ ମୃତ୍ୟୁ ତାରିଖ ପରେ ହୋଇପାରିବ ନାହିଁ।", "Please specify the other direct cause of death.": "ଦୟାକରି ମୃତ୍ୟୁର ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ।", "Facility logins add child death (CDR) records only.": "ସଂସ୍ଥା ଲଗଇନ୍ କେବଳ ଶିଶୁ ମୃତ୍ୟୁ (CDR) ରେକର୍ଡ ଯୋଡ଼ିପାରିବ।", "Block and facility logins cannot delete cloud records.": "ବ୍ଲକ୍ ଏବଂ ସଂସ୍ଥା ଲଗଇନ୍ କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରିପାରିବେ ନାହିଁ।", "Cloud save failed": "କ୍ଲାଉଡ୍ ସେଭ୍ ବିଫଳ ହେଲା", "Encryption is not available in this browser window. Use Chrome or Edge.": "ଏହି ବ୍ରାଉଜର୍ ୱିଣ୍ଡୋରେ ଏନକ୍ରିପସନ୍ ଉପଲବ୍ଧ ନାହିଁ। Chrome କିମ୍ବା Edge ବ୍ୟବହାର କରନ୍ତୁ।", "Facility logins are created from a DISTRICT login (the district passcode is needed to open the cloud for facility users).": "ସଂସ୍ଥା ଲଗଇନ୍ ଜିଲ୍ଲା ଲଗଇନ୍‌ରୁ ତିଆରି ହୁଏ (ସଂସ୍ଥା ଉପଭୋକ୍ତାଙ୍କ ପାଇଁ କ୍ଲାଉଡ୍ ଖୋଲିବାକୁ ଜିଲ୍ଲା ପାସକୋଡ୍ ଦରକାର)।", "Enter or generate at least one facility passcode.": "ଅତିକମରେ ଗୋଟିଏ ସଂସ୍ଥା ପାସକୋଡ୍ ଦିଅନ୍ତୁ କିମ୍ବା ତିଆରି କରନ୍ତୁ।", "Each facility needs a different passcode.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ ଭିନ୍ନ ପାସକୋଡ୍ ଦରକାର।", "This is not a valid passcode list (needs District, Type, Facility code, Facility, Passcode).": "ଏହା ଏକ ବୈଧ ପାସକୋଡ୍ ତାଲିକା ନୁହେଁ (District, Type, Facility code, Facility, Passcode ଦରକାର)।", "Each facility (SNCU / NBSU, CHC, PHC, DHH, ...) gets its own passcode (6+ characters) and sees only its own CDR records.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥା (SNCU / NBSU, CHC, PHC, DHH, ...) ନିଜର ପାସକୋଡ୍ (6+ ଅକ୍ଷର) ପାଏ ଏବଂ କେବଳ ନିଜର CDR ରେକର୍ଡ ଦେଖିପାରେ।", "Give each facility only its own passcode plus the downloaded logins file (they load it once on the login screen).": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ କେବଳ ତାର ନିଜର ପାସକୋଡ୍ ଏବଂ ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଲଗଇନ୍ ଫାଇଲ୍ ଦିଅନ୍ତୁ (ସେମାନେ ଲଗଇନ୍ ପରଦାରେ ଥରେ ଏହାକୁ ଲୋଡ୍ କରିବେ)।", "Leave a passcode empty to skip a facility. A facility marked (login exists) keeps its old passcode unless you enter a new one. Passcodes you enter stay while you change the filter.": "କୌଣସି ସଂସ୍ଥାକୁ ଛାଡ଼ିବାକୁ ପାସକୋଡ୍ ଖାଲି ରଖନ୍ତୁ। (ଲଗଇନ୍ ଅଛି) ଚିହ୍ନିତ ସଂସ୍ଥା ନୂଆ ପାସକୋଡ୍ ନଦେଲେ ପୁରୁଣା ପାସକୋଡ୍ ରଖେ। ଫିଲ୍ଟର୍ ବଦଳାଇଲେ ମଧ୍ୟ ଆପଣ ଦେଇଥିବା ପାସକୋଡ୍ ରହିଥାଏ।", "Search name or code": "ନାମ କିମ୍ବା କୋଡ୍ ଖୋଜନ୍ତୁ", "Generate for all shown without a login": "ଲଗଇନ୍ ନଥିବା ସମସ୍ତ ଦେଖାଯାଇଥିବା ସଂସ୍ଥା ପାଇଁ ତିଆରି କରନ୍ତୁ", "Create logins file + passcode list": "ଲଗଇନ୍ ଫାଇଲ୍ + ପାସକୋଡ୍ ତାଲିକା ତିଆରି କରନ୍ତୁ", "Import passcode list (CSV)": "ପାସକୋଡ୍ ତାଲିକା (CSV) ଆମଦାନି କରନ୍ତୁ", "Type": "ପ୍ରକାର", "Facility": "ସଂସ୍ଥା", "(login exists)": "(ଲଗଇନ୍ ଅଛି)", "No facility matches.": "କୌଣସି ସଂସ୍ଥା ମେଳ ଖାଉନାହିଁ।", "(none)": "(କିଛି ନାହିଁ)", "Add": "ଯୋଡ଼ନ୍ତୁ", "Language": "ଭାଷା"};
+  var DICT = {"MPCDSR Dashboard": "MPCDSR ଡ୍ୟାସବୋର୍ଡ", "Select your district (and your block or facility, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.": "ଆପଣଙ୍କ ଜିଲ୍ଲା (ଏବଂ ଆପଣଙ୍କର ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା ଲଗଇନ୍ ଥିଲେ ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା) ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ। ଆପଣ କେବଳ ନିଜ ଜିଲ୍ଲା, ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥାର ରେକର୍ଡ ଦେଖିପାରିବେ।", "Show": "ଦେଖାନ୍ତୁ", "Hide": "ଲୁଚାନ୍ତୁ", "Open dashboard": "ଡ୍ୟାସବୋର୍ଡ ଖୋଲନ୍ତୁ", "Use offline (no cloud)": "ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ନାହିଁ)", "Viewing:": "ଦେଖୁଛନ୍ତି:", "Facility logins": "ସଂସ୍ଥା ଲଗଇନ୍", "Log out": "ଲଗ୍ ଆଉଟ୍", "Maternal & Child Death Review — Dashboard": "ମାତୃ ଓ ଶିଶୁ ମୃତ୍ୟୁ ସମୀକ୍ଷା — ଡ୍ୟାସବୋର୍ଡ", "Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.": "ଜିଲ୍ଲାୱାରୀ ଧାରା, କାରଣ ଓ ରିପୋର୍ଟିଂ ସମ୍ପୂର୍ଣ୍ଣତା ଦେଖିବା ପାଇଁ MDR ଲାଇନ୍-ଲିଷ୍ଟିଂ ୱାର୍କବୁକ୍ ଏବଂ/କିମ୍ବା CDR ସାରାଂଶ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "MDR (Maternal Deaths)": "MDR (ମାତୃ ମୃତ୍ୟୁ)", "CDR (Child Deaths)": "CDR (ଶିଶୁ ମୃତ୍ୟୁ)", "You are offline - showing the saved app. Cloud records need a connection.": "ଆପଣ ଅଫଲାଇନ୍ ଅଛନ୍ତି - ସେଭ୍ ହୋଇଥିବା ଆପ୍ ଦେଖାଯାଉଛି। କ୍ଲାଉଡ୍ ରେକର୍ଡ ପାଇଁ ଇଣ୍ଟରନେଟ୍ ଦରକାର।", "Install app": "ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Passcode": "ପାସକୋଡ୍", "Show passcode": "ପାସକୋଡ୍ ଦେଖାନ୍ତୁ", "Hide passcode": "ପାସକୋଡ୍ ଲୁଚାନ୍ତୁ", "Dismiss": "ବନ୍ଦ କରନ୍ତୁ", "Install MPCDSR app": "MPCDSR ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Create facility logins (SNCU/NBSU and all facilities) for this district": "ଏହି ଜିଲ୍ଲା ପାଇଁ ସଂସ୍ଥା ଲଗଇନ୍ ତିଆରି କରନ୍ତୁ (SNCU/NBSU ଓ ସମସ୍ତ ସଂସ୍ଥା)", "Select State / District…": "ରାଜ୍ୟ / ଜିଲ୍ଲା ବାଛନ୍ତୁ…", "Block / Facility (leave blank for district login)": "ବ୍ଲକ୍ / ସଂସ୍ଥା (ଜିଲ୍ଲା ଲଗଇନ୍ ପାଇଁ ଖାଲି ରଖନ୍ତୁ)", "SNCU / NBSU (leave blank if not an SNCU/NBSU)": "SNCU / NBSU (SNCU/NBSU ନହେଲେ ଖାଲି ରଖନ୍ତୁ)", "State / Admin (all districts)": "ରାଜ୍ୟ / ଆଡମିନ୍ (ସମସ୍ତ ଜିଲ୍ଲା)", "District login (all blocks)": "ଜିଲ୍ଲା ଲଗଇନ୍ (ସମସ୍ତ ବ୍ଲକ୍)", "All districts (State)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ)", "Offline mode (no cloud) — data stays on this device": "ଅଫଲାଇନ୍ ମୋଡ୍ (କ୍ଲାଉଡ୍ ନାହିଁ) — ତଥ୍ୟ ଏହି ଡିଭାଇସ୍‌ରେ ରହିବ", "Save records to cloud": "ରେକର୍ଡ କ୍ଲାଉଡ୍‌ରେ ସେଭ୍ କରନ୍ତୁ", "Load latest": "ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ", "Delete cloud records": "କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରନ୍ତୁ", "Records": "ରେକର୍ଡ", "Click to upload": "ଅପଲୋଡ୍ କରିବାକୁ କ୍ଲିକ୍ କରନ୍ତୁ", "workbook (.xlsx)": "ୱାର୍କବୁକ୍ (.xlsx)", "No file selected": "କୌଣସି ଫାଇଲ୍ ବଛାଯାଇନାହିଁ", "aggregate workbook": "ସାରାଂଶ ୱାର୍କବୁକ୍", "raw line-listing": "ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ", "Optional:": "ବୈକଳ୍ପିକ:", "District/Month-wise Delivery data": "ଜିଲ୍ଲା/ମାସ ଅନୁସାରେ ପ୍ରସବ ତଥ୍ୟ", "Year": "ବର୍ଷ", "All Years": "ସମସ୍ତ ବର୍ଷ", "Duration: From": "ଅବଧି: ଠାରୁ", "To": "ପର୍ଯ୍ୟନ୍ତ", "Month": "ମାସ", "All Districts (state total)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ ମୋଟ)", "All Blocks": "ସମସ୍ତ ବ୍ଲକ୍", "District": "ଜିଲ୍ଲା", "Block": "ବ୍ଲକ୍", "Download XLSX + records (this month)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ଏହି ମାସ)", "Download XLSX + records (all months)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ସମସ୍ତ ମାସ)", "Download XLSX + records (block-wise, month-wise)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ବ୍ଲକ୍-ଅନୁସାରେ, ମାସ-ଅନୁସାରେ)", "Deceased list for SamMpurna (ANC)": "ସମ୍ପୂର୍ଣ୍ଣା (ANC) ପାଇଁ ମୃତକଙ୍କ ତାଲିକା", "Clear": "ଖାଲି କରନ୍ତୁ", "Upload a workbook to see the dashboard.": "ଡ୍ୟାସବୋର୍ଡ ଦେଖିବାକୁ ଏକ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "Upload the line-listing (or load saved records from the cloud) to search records.": "ରେକର୍ଡ ଖୋଜିବା ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ (କିମ୍ବା କ୍ଲାଉଡ୍‌ରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଲୋଡ୍ କରନ୍ତୁ)।", "No matching records in the line-listing for this selection": "ଏହି ଚୟନ ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂରେ ମେଳ ଖାଉଥିବା ରେକର୍ଡ ନାହିଁ", "Name of the Deceased Mother": "ମୃତ ମାତାଙ୍କ ନାମ", "Name & address of the Husband / Guardian": "ସ୍ୱାମୀ / ଅଭିଭାବକଙ୍କ ନାମ ଓ ଠିକଣା", "Age": "ବୟସ", "Date of death": "ମୃତ୍ୟୁ ତାରିଖ", "Place": "ସ୍ଥାନ", "Death period": "ମୃତ୍ୟୁ ସମୟକାଳ", "Direct cause": "ସିଧାସଳଖ କାରଣ", "Associated cause": "ସହଯୋଗୀ କାରଣ", "Name of facility": "ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ", "Days: Delivery→Death": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ", "Days: Delivery→Death (Post natal)": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ (ପ୍ରସବୋତ୍ତର)", "High risk pregnancy": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା", "Risk details": "ବିପଦର ବିବରଣୀ", "Gravida": "ଗ୍ରାଭିଡା", "Para": "ପାରା", "PHC Area": "PHC ଅଞ୍ଚଳ", "Sub Centre": "ଉପକେନ୍ଦ୍ର", "Reporting month/year": "ରିପୋର୍ଟିଂ ମାସ/ବର୍ଷ", "Gender": "ଲିଙ୍ଗ", "Caste": "ଜାତି", "Place of death": "ମୃତ୍ୟୁ ସ୍ଥାନ", "Date of birth": "ଜନ୍ମ ତାରିଖ", "Age category": "ବୟସ ବର୍ଗ", "Birth weight (Kg)": "ଜନ୍ମ ଓଜନ (କିଗ୍ରା)", "Probable cause (major)": "ସମ୍ଭାବ୍ୟ କାରଣ (ମୁଖ୍ୟ)", "Probable cause (other)": "ସମ୍ଭାବ୍ୟ କାରଣ (ଅନ୍ୟ)", "Specify other direct cause": "ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ", "New entry": "ନୂଆ ଏଣ୍ଟ୍ରି", "Add record": "ରେକର୍ଡ ଯୋଡ଼ନ୍ତୁ", "Clear form": "ଫର୍ମ ଖାଲି କରନ୍ତୁ", "View": "ଦେଖନ୍ତୁ", "Edit": "ସମ୍ପାଦନ", "Close": "ବନ୍ଦ କରନ୍ତୁ", "— select —": "— ବାଛନ୍ତୁ —", "Save changes": "ପରିବର୍ତ୍ତନ ସେଭ୍ କରନ୍ତୁ", "Cancel": "ବାତିଲ୍", "No records loaded yet — upload a line-listing or use ☁ Load latest.": "ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ରେକର୍ଡ ଲୋଡ୍ ହୋଇନାହିଁ — ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ କିମ୍ବା ☁ ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ ବ୍ୟବହାର କରନ୍ତୁ।", "Total deaths": "ମୋଟ ମୃତ୍ୟୁ", "Total death": "ମୋଟ ମୃତ୍ୟୁ", "Facility deaths": "ସଂସ୍ଥାରେ ମୃତ୍ୟୁ", "Home deaths": "ଘରେ ମୃତ୍ୟୁ", "Transit deaths": "ରାସ୍ତାରେ ମୃତ୍ୟୁ", "Male": "ପୁରୁଷ", "Female": "ମହିଳା", "Neonatal (0-28 days)": "ନବଜାତ (0-28 ଦିନ)", "Infant": "ଶିଶୁ", "Child": "ପିଲା", "Other cause": "ଅନ୍ୟ କାରଣ", "HRP deaths": "HRP ମୃତ୍ୟୁ", "Non-HRP deaths": "ଅଣ-HRP ମୃତ୍ୟୁ", "Antenatal deaths": "ପ୍ରସବପୂର୍ବ ମୃତ୍ୟୁ", "Intranatal deaths": "ପ୍ରସବକାଳୀନ ମୃତ୍ୟୁ", "Post natal deaths": "ପ୍ରସବୋତ୍ତର ମୃତ୍ୟୁ", "Post Abortion deaths": "ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ ମୃତ୍ୟୁ", "Total deliveries (from Delivery data upload)": "ମୋଟ ପ୍ରସବ (ପ୍ରସବ ତଥ୍ୟ ଅପଲୋଡ୍‌ରୁ)", "Total (All Months)": "ମୋଟ (ସମସ୍ତ ମାସ)", "Types of High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP) ର ପ୍ରକାର", "(click a card to see the matching records)": "(ମେଳ ଖାଉଥିବା ରେକର୍ଡ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Place of death breakdown": "ମୃତ୍ୟୁ ସ୍ଥାନ ଅନୁସାରେ ବିଭାଜନ", "Age-wise breakdown": "ବୟସ ଅନୁସାରେ ବିଭାଜନ", "Cause of death breakdown": "ମୃତ୍ୟୁ କାରଣ ଅନୁସାରେ ବିଭାଜନ", "(click a card to see the district-wise split)": "(ଜିଲ୍ଲା ଅନୁସାରେ ବିଭାଜନ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Death period breakdown (Antenatal / Intranatal / Post natal / Post Abortion)": "ମୃତ୍ୟୁ ସମୟକାଳ ଅନୁସାରେ ବିଭାଜନ (ପ୍ରସବପୂର୍ବ / ପ୍ରସବକାଳୀନ / ପ୍ରସବୋତ୍ତର / ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ)", "District-wise comparison": "ଜିଲ୍ଲା ଅନୁସାରେ ତୁଳନା", "Metric": "ମାପକ", "Sort": "କ୍ରମ", "High → Low": "ଅଧିକରୁ କମ୍", "A → Z": "A → Z", "Block-wise comparison": "ବ୍ଲକ୍ ଅନୁସାରେ ତୁଳନା", "(from line-listing upload — select a District above to view — click a block card to see its matching records)": "(ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍‌ରୁ — ଦେଖିବାକୁ ଉପରେ ଜିଲ୍ଲା ବାଛନ୍ତୁ — ମେଳ ଖାଉଥିବା ରେକର୍ଡ ପାଇଁ ବ୍ଲକ୍ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Breakdown": "ବିଭାଜନ", "Columns to compare (pick 2+)": "ତୁଳନା ପାଇଁ ସ୍ତମ୍ଭ (2 ବା ଅଧିକ ବାଛନ୍ତୁ)", "Month-wise total deaths": "ମାସ ଅନୁସାରେ ମୋଟ ମୃତ୍ୟୁ", "Quarter-wise comparison": "ତ୍ରୈମାସିକ ଅନୁସାରେ ତୁଳନା", "Trend across months": "ମାସ ମାସ ଧାରା", "Metric label to trend (matched by name across month sheets)": "ଧାରା ପାଇଁ ମାପକ ନାମ (ମାସ ସିଟ୍ ମଧ୍ୟରେ ନାମ ଅନୁସାରେ ମେଳ)", "Build trend": "ଧାରା ତିଆରି କରନ୍ତୁ", "Full data table": "ସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ ତାଲିକା", "Cause of death columns": "ମୃତ୍ୟୁ କାରଣ ସ୍ତମ୍ଭ", "Place of death columns": "ମୃତ୍ୟୁ ସ୍ଥାନ ସ୍ତମ୍ଭ", "Age not stated": "ବୟସ ଉଲ୍ଲେଖ ନାହିଁ", "Upload the optional raw line-listing to see individual records here.": "ଏଠାରେ ବ୍ୟକ୍ତିଗତ ରେକର୍ଡ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ।", "View records": "ରେକର୍ଡ ଦେଖନ୍ତୁ", "No HRP records for this selection": "ଏହି ଚୟନ ପାଇଁ କୌଣସି HRP ରେକର୍ଡ ନାହିଁ", "No districts reported this age group": "ଏହି ବୟସ ବର୍ଗ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/age group": "ଏହି ଜିଲ୍ଲା/ବୟସ ବର୍ଗ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "No districts reported this cause": "ଏହି କାରଣ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/cause": "ଏହି ଜିଲ୍ଲା/କାରଣ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "Upload the optional raw line-listing to see this breakdown": "ଏହି ବିଭାଜନ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ", "Districts / rows": "ଜିଲ୍ଲା / ଧାଡ଼ି", "Blocks (from line-listing)": "ବ୍ଲକ୍ (ଲାଇନ୍-ଲିଷ୍ଟିଂରୁ)", "Institutional deliveries": "ସଂସ୍ଥାଗତ ପ୍ରସବ", "Home deliveries": "ଘରୋଇ ପ୍ରସବ", "Non-HRP": "ଅଣ-HRP", "High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP)", "< 1 month": "< 1 ମାସ", "1–3 months": "1–3 ମାସ", "3–12 months": "3–12 ମାସ", "Incorrect passcode.": "ଭୁଲ୍ ପାସକୋଡ୍।", "Please select your district.": "ଦୟାକରି ଆପଣଙ୍କ ଜିଲ୍ଲା ବାଛନ୍ତୁ।", "Enter your block passcode.": "ଆପଣଙ୍କ ବ୍ଲକ୍ ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Enter your facility passcode.": "ଆପଣଙ୍କ ସଂସ୍ଥାର ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Checking…": "ଯାଞ୍ଚ ହେଉଛି…", "Block login not found.": "ବ୍ଲକ୍ ଲଗଇନ୍ ମିଳିଲା ନାହିଁ।", "Checking previously saved records...": "ପୂର୍ବରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "Checking cloud for records...": "କ୍ଲାଉଡ୍‌ରେ ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "No cloud records to delete.": "ଡିଲିଟ୍ କରିବାକୁ କ୍ଲାଉଡ୍ ରେକର୍ଡ ନାହିଁ।", "Delete cancelled.": "ଡିଲିଟ୍ ବାତିଲ୍ ହେଲା।", "Load a file first.": "ପ୍ରଥମେ ଏକ ଫାଇଲ୍ ଲୋଡ୍ କରନ୍ତୁ।", "Name of the Deceased Mother is required.": "ମୃତ ମାତାଙ୍କ ନାମ ଆବଶ୍ୟକ।", "Block is required.": "ବ୍ଲକ୍ ଆବଶ୍ୟକ।", "Date of birth must be dd-mm-yyyy.": "ଜନ୍ମ ତାରିଖ dd-mm-yyyy ଫର୍ମାଟରେ ହେବା ଆବଶ୍ୟକ।", "Date of birth cannot be in the future.": "ଜନ୍ମ ତାରିଖ ଭବିଷ୍ୟତରେ ହୋଇପାରିବ ନାହିଁ।", "Date of birth cannot be after the date of death.": "ଜନ୍ମ ତାରିଖ ମୃତ୍ୟୁ ତାରିଖ ପରେ ହୋଇପାରିବ ନାହିଁ।", "Please specify the other direct cause of death.": "ଦୟାକରି ମୃତ୍ୟୁର ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ।", "Facility logins add child death (CDR) records only.": "ସଂସ୍ଥା ଲଗଇନ୍ କେବଳ ଶିଶୁ ମୃତ୍ୟୁ (CDR) ରେକର୍ଡ ଯୋଡ଼ିପାରିବ।", "Block and facility logins cannot delete cloud records.": "ବ୍ଲକ୍ ଏବଂ ସଂସ୍ଥା ଲଗଇନ୍ କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରିପାରିବେ ନାହିଁ।", "Cloud save failed": "କ୍ଲାଉଡ୍ ସେଭ୍ ବିଫଳ ହେଲା", "Encryption is not available in this browser window. Use Chrome or Edge.": "ଏହି ବ୍ରାଉଜର୍ ୱିଣ୍ଡୋରେ ଏନକ୍ରିପସନ୍ ଉପଲବ୍ଧ ନାହିଁ। Chrome କିମ୍ବା Edge ବ୍ୟବହାର କରନ୍ତୁ।", "Facility logins are created from a DISTRICT login (the district passcode is needed to open the cloud for facility users).": "ସଂସ୍ଥା ଲଗଇନ୍ ଜିଲ୍ଲା ଲଗଇନ୍‌ରୁ ତିଆରି ହୁଏ (ସଂସ୍ଥା ଉପଭୋକ୍ତାଙ୍କ ପାଇଁ କ୍ଲାଉଡ୍ ଖୋଲିବାକୁ ଜିଲ୍ଲା ପାସକୋଡ୍ ଦରକାର)।", "Enter or generate at least one facility passcode.": "ଅତିକମରେ ଗୋଟିଏ ସଂସ୍ଥା ପାସକୋଡ୍ ଦିଅନ୍ତୁ କିମ୍ବା ତିଆରି କରନ୍ତୁ।", "Each facility needs a different passcode.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ ଭିନ୍ନ ପାସକୋଡ୍ ଦରକାର।", "This is not a valid passcode list (needs District, Type, Facility code, Facility, Passcode).": "ଏହା ଏକ ବୈଧ ପାସକୋଡ୍ ତାଲିକା ନୁହେଁ (District, Type, Facility code, Facility, Passcode ଦରକାର)।", "Each facility (SNCU / NBSU, CHC, PHC, DHH, ...) gets its own passcode (6+ characters) and sees only its own CDR records.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥା (SNCU / NBSU, CHC, PHC, DHH, ...) ନିଜର ପାସକୋଡ୍ (6+ ଅକ୍ଷର) ପାଏ ଏବଂ କେବଳ ନିଜର CDR ରେକର୍ଡ ଦେଖିପାରେ।", "Give each facility only its own passcode plus the downloaded logins file (they load it once on the login screen).": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ କେବଳ ତାର ନିଜର ପାସକୋଡ୍ ଏବଂ ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଲଗଇନ୍ ଫାଇଲ୍ ଦିଅନ୍ତୁ (ସେମାନେ ଲଗଇନ୍ ପରଦାରେ ଥରେ ଏହାକୁ ଲୋଡ୍ କରିବେ)।", "Leave a passcode empty to skip a facility. A facility marked (login exists) keeps its old passcode unless you enter a new one. Passcodes you enter stay while you change the filter.": "କୌଣସି ସଂସ୍ଥାକୁ ଛାଡ଼ିବାକୁ ପାସକୋଡ୍ ଖାଲି ରଖନ୍ତୁ। (ଲଗଇନ୍ ଅଛି) ଚିହ୍ନିତ ସଂସ୍ଥା ନୂଆ ପାସକୋଡ୍ ନଦେଲେ ପୁରୁଣା ପାସକୋଡ୍ ରଖେ। ଫିଲ୍ଟର୍ ବଦଳାଇଲେ ମଧ୍ୟ ଆପଣ ଦେଇଥିବା ପାସକୋଡ୍ ରହିଥାଏ।", "Search name or code": "ନାମ କିମ୍ବା କୋଡ୍ ଖୋଜନ୍ତୁ", "Generate for all shown without a login": "ଲଗଇନ୍ ନଥିବା ସମସ୍ତ ଦେଖାଯାଇଥିବା ସଂସ୍ଥା ପାଇଁ ତିଆରି କରନ୍ତୁ", "Create logins file + passcode list": "ଲଗଇନ୍ ଫାଇଲ୍ + ପାସକୋଡ୍ ତାଲିକା ତିଆରି କରନ୍ତୁ", "Import passcode list (CSV)": "ପାସକୋଡ୍ ତାଲିକା (CSV) ଆମଦାନି କରନ୍ତୁ", "Type": "ପ୍ରକାର", "Facility": "ସଂସ୍ଥା", "(login exists)": "(ଲଗଇନ୍ ଅଛି)", "No facility matches.": "କୌଣସି ସଂସ୍ଥା ମେଳ ଖାଉନାହିଁ।", "(none)": "(କିଛି ନାହିଁ)", "Add": "ଯୋଡ଼ନ୍ତୁ", "Language": "ଭାଷା"};
   var PAT = [["^Block: (.+)$", "ବ୍ଲକ୍: $1"], ["^(.+) district$", "$1 ଜିଲ୍ଲା"], ["^(.+) block, (.+) district$", "$1 ବ୍ଲକ୍, $2 ଜିଲ୍ଲା"], ["^(.+) \\((.+)\\), (.+) district$", "$1 ($2), $3 ଜିଲ୍ଲା"], ["^Facility logins — (.+) district$", "ସଂସ୍ଥା ଲଗଇନ୍ — $1 ଜିଲ୍ଲା"], ["^Loaded (\\d+) facility login\\(s\\) for (.+)\\. Choose your facility and enter your passcode\\.$", "$2 ପାଇଁ $1 ସଂସ୍ଥା ଲଗଇନ୍ ଲୋଡ୍ ହେଲା। ଆପଣଙ୍କ ସଂସ୍ଥା ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ।"], ["^Created (\\d+) facility login\\(s\\)\\. Keep the passcode list private and share each passcode only with its facility\\.$", "$1 ସଂସ୍ଥା ଲଗଇନ୍ ତିଆରି ହେଲା। ପାସକୋଡ୍ ତାଲିକା ଗୋପନ ରଖନ୍ତୁ ଏବଂ ପ୍ରତ୍ୟେକ ପାସକୋଡ୍ କେବଳ ସଂସ୍ଥାକୁ ଦିଅନ୍ତୁ।"], ["^Creating (\\d+) / (\\d+)…$", "ତିଆରି ହେଉଛି $1 / $2…"], ["^Creating…$", "ତିଆରି ହେଉଛି…"], ["^(\\d+) passcode\\(s\\) ready$", "$1 ପାସକୋଡ୍ ପ୍ରସ୍ତୁତ"], ["^(\\d+) facilit(?:y|ies)$", "$1 ସଂସ୍ଥା"], ["^Showing the first (\\d+) of (\\d+) — use the search to narrow down\\.$", "$2 ମଧ୍ୟରୁ ପ୍ରଥମ $1 ଦେଖାଯାଉଛି — ସୀମିତ କରିବାକୁ ଖୋଜା ବ୍ୟବହାର କରନ୍ତୁ।"], ["^Imported (\\d+) passcode\\(s\\) for (.+?)( \\((\\d+) not matched\\))?\\. Now create the logins file\\.$", "$2 ପାଇଁ $1 ପାସକୋଡ୍ ଆମଦାନି ହେଲା$3। ବର୍ତ୍ତମାନ ଲଗଇନ୍ ଫାଇଲ୍ ତିଆରି କରନ୍ତୁ।"], ["^Passcodes need 6\\+ characters: (.+)$", "ପାସକୋଡ୍ ଅତିକମରେ 6 ଅକ୍ଷର ହେବା ଦରକାର: $1"], ["^Failed: (.+)$", "ବିଫଳ: $1"]].map(function(p){ return [new RegExp(p[0]), p[1]]; });
   var KEY='mp_lang', LANG='en';
   try{ LANG = localStorage.getItem(KEY)==='or' ? 'or' : 'en'; }catch(e){}
