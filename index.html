@@ -69,7 +69,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   header{padding:22px 28px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#141a2a,#0f1420);}
   header h1{margin:0;font-size:22px;letter-spacing:.3px;}
   header p{margin:4px 0 0;color:var(--muted);font-size:13px;}
-  .wrap{max-width:1400px;margin:0 auto;padding:20px;}
+  .wrap{max-width:1400px;margin:0 auto;padding:20px 20px 90px;}
   .tabs{display:flex;gap:8px;margin-bottom:18px;}
   .tab-btn{padding:10px 18px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:14px;font-weight:600;}
   .tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -123,7 +123,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   /* ---- Tablet ---- */
   @media(max-width:900px){
     .grid2{grid-template-columns:1fr;}
-    .wrap{padding:16px;}
+    .wrap{padding:16px 16px 90px;}
     .upload-box{min-width:100%;flex:1 1 100%;padding:26px 18px;}
     .filter-row{min-width:100%;flex:1 1 100%;}
   }
@@ -165,11 +165,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 #mpg select,#mpg input{width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #262b36;background:#0f1115;color:#e8eaf0;font-size:14px;}
 #mpg button{width:100%;padding:10px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer;}
 #mpg .err{color:#f87171;font-size:12.5px;min-height:16px;margin-bottom:8px;}
-#mplockbar{display:none;align-items:center;gap:10px;font-size:12px;padding:6px 14px;background:#171a21;color:#9aa2b1;border-bottom:1px solid #262b36;}
-#mplockbar b{color:#60a5fa;} #mplockbar button{background:transparent;border:1px solid #262b36;color:#9aa2b1;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;}
-.cloud-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
-.cloud-row button{padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#f5f7fa;cursor:pointer;font-size:12.5px;}
-.cloud-row .cloud-status{font-size:12px;color:#666;}
+.fab-new{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:500;background:#dc2626;color:#fff;border:0;border-radius:999px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.45);min-height:48px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.fab-new:hover{background:#b91c1c;}
+.fab-new:active{background:#991b1b;transform:scale(.97);}
+body.gate-open .fab-new{display:none;}
+header{position:relative;}
+#mplockbar{display:none;position:absolute;top:10px;right:14px;max-width:calc(100% - 28px);align-items:center;justify-content:flex-end;gap:8px;font-size:12px;color:#9aa2b1;z-index:5;}
+#mplockbar .lk-view{min-width:0;text-align:right;line-height:1.3;}
+#mplockbar b{color:#60a5fa;overflow-wrap:anywhere;}
+#mplockbar button{flex:0 0 auto;background:#171a21;border:1px solid #3a4260;color:#e8eaf0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;}
+#mplockbar .lk-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;color:#f87171;}
+#mplockbar button:active{background:#2563eb;border-color:#2563eb;}
+header h1{padding-right:0;}
+header.has-lock h1{margin-top:34px;}
+.cloud-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;}
+.cloud-row button{padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:13px;font-weight:600;min-height:40px;}
+.cloud-row button:first-child{background:var(--accent);border-color:var(--accent);color:#fff;}
+.cloud-row button:active{opacity:.8;}
+.cloud-row .cloud-status{font-size:12px;color:var(--muted);flex:1 1 100%;overflow-wrap:anywhere;}
+.cloud-row .logout-btn{background:transparent;border-color:#3a4260;}
+.cloud-row .cloud-status:empty{display:none;}
 </style>
 <style id="mp-mobile-css">
   /* ---- Mobile hardening (GitHub Pages / phones) ---- */
@@ -193,6 +208,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   @media(max-width:360px){ .kpis{grid-template-columns:1fr;} .tab-btn{font-size:12px;padding:10px 4px;} }
   @media(hover:none){ .dl-tab:hover:not(:disabled){border-color:var(--border);color:var(--text);} }
+  @media(max-width:600px){
+    #mplockbar{top:8px;right:10px;font-size:11px;max-width:calc(100% - 20px);}
+    #mplockbar .lk-text{display:none;}
+    #mplockbar .lk-icon{width:40px;height:40px;}
+    header.has-lock h1{margin-top:40px;}
+    .cloud-row:not([style*="none"]){display:grid !important;grid-template-columns:1fr 1fr;gap:8px;padding:8px;}
+    .cloud-row button{width:100%;min-height:46px;font-size:13px;padding:8px 6px;}
+    .cloud-row #cdr-cloud-delete,.cloud-row #mdr-cloud-delete{grid-column:1 / -1;}
+    .cloud-row .logout-btn{grid-column:1 / -1;margin-left:0 !important;}
+    .cloud-row .cloud-status{grid-column:1 / -1;}
+    .tabs{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0;margin-bottom:12px;}
+    .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
+    .card-fs-btn{width:36px;height:36px;}
+    .rec-search input[type=search]{flex:1 1 100% !important;min-width:0 !important;}
+    .table-wrap{max-width:100%;}
+    #mpg .box{padding:22px 18px;}
+    #mpg select,#mpg input{font-size:16px;min-height:46px;}
+    #mpg button{min-height:46px;}
+  }
+  @media(max-width:360px){ .cloud-row{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -200,8 +235,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 <select id="mpgDist"></select>
 <select id="mpgBlock" style="display:none"></select>
 <div style="position:relative;"><input id="mpgPass" type="password" placeholder="Passcode" autocomplete="off" style="padding-right:64px;"><button type="button" id="mpgEye" aria-label="Show passcode" aria-pressed="false" style="position:absolute;right:6px;top:6px;width:auto;padding:5px 10px;background:transparent;color:#9aa2b1;font-size:12px;font-weight:600;">Show</button></div><div class="err" id="mpgErr"></div><button type="button" id="mpgBtn">Open dashboard</button><p style="margin:12px 0 0;text-align:center;font-size:12.5px;"><a href="#" id="mpgOffline" style="color:#60a5fa;text-decoration:underline;">Use offline (no cloud)</a></p></div></div>
-<div id="mplockbar"><span>Viewing: <b id="mplockName"></b></span><button type="button" onclick="mpDistrictLogout()">Switch / log out</button></div>
 <header>
+  <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-text" onclick="mpDistrictLogout()">Log out</button><button type="button" class="lk-icon" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
   <h1 style="color: orange;">Maternal & Child Death Review — Dashboard</h1>
   <p>Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.</p>
 </header>
@@ -2316,12 +2351,12 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   sel.innerHTML = '<option value="">Select district…</option>' + Object.keys(DISTRICT_ACCESS).map(c=>'<option value="'+c+'">'+DISTRICT_ACCESS[c].name+'</option>').join('') + '<option value="ADMIN">State / Admin (all districts)</option>';
   function startApp(){
     document.getElementById('mpg').style.display='none';
-    document.getElementById('mplockbar').style.display='flex';
+    document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
     document.getElementById('mplockName').textContent = BLOCK_LOCK ? (BLOCK_LOCK.name+' block, '+DISTRICT_LOCK.name+' district') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'All districts (State)');
     // A district login (not state, not block) can create block logins.
     // Block logins are view-only: saving/deleting would overwrite the whole district's records for a period.
     document.querySelectorAll('[id$="-cloud-save"],[id$="-cloud-delete"]').forEach(b=>{ b.style.display = BLOCK_LOCK ? 'none' : ''; });
-    document.querySelectorAll('.cloud-row').forEach(el=>{ if(REC_URL) el.style.display='flex'; });
+    document.querySelectorAll('.cloud-row').forEach(el=>{ el.style.display='flex'; });
     document.dispatchEvent(new CustomEvent('mp-auth-ready'));
   }
   function tryLogin(){
@@ -2383,8 +2418,9 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     DISTRICT_LOCK=null; BLOCK_LOCK=null; CLOUD_AUTH=null;
     try{ sessionStorage.removeItem('mp_district_auth'); }catch(_){}
     document.getElementById('mpg').style.display='none';
-    document.getElementById('mplockbar').style.display='flex';
+    document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
     document.getElementById('mplockName').textContent='Offline mode (no cloud) — data stays on this device';
+    document.querySelectorAll('.cloud-row').forEach(el=>{ el.style.display='none'; });
   };
   (function(){
     const inp = document.getElementById('mpgPass'), eye = document.getElementById('mpgEye');
@@ -2415,6 +2451,13 @@ function makeModule(containerId, opts){
   const el = document.getElementById(containerId);
   el.innerHTML = `
     <div class="card">
+      <div class="cloud-row" id="${containerId}-cloud-row">
+        <button type="button" id="${containerId}-cloud-save">☁ Save records to cloud</button>
+        <button type="button" id="${containerId}-cloud-load">☁ Load latest</button>
+        <button type="button" id="${containerId}-cloud-delete" style="color:#f87171;border-color:#7f3a3a;">🗑 Delete cloud records</button>
+        <button type="button" class="logout-btn" onclick="mpDistrictLogout()" style="margin-left:auto;">⎋ Log out</button>
+        <span class="cloud-status" id="${containerId}-cloud-status"></span>
+      </div>
       <div class="upload-row">
         <label class="upload-box" id="${containerId}-drop">
           <div class="icn">📁</div>
@@ -2479,12 +2522,6 @@ function makeModule(containerId, opts){
             <div id="${containerId}-rec-search-results" style="display:none;margin-top:8px;"></div>
           </div>
         </div>
-      </div>
-      <div class="cloud-row" id="${containerId}-cloud-row" style="display:none;">
-        <button type="button" id="${containerId}-cloud-save">☁ Save records to cloud</button>
-        <button type="button" id="${containerId}-cloud-load">☁ Load latest</button>
-        <button type="button" id="${containerId}-cloud-delete" style="color:#c0392b;border-color:#e6b0aa;">🗑 Delete cloud records</button>
-        <span class="cloud-status" id="${containerId}-cloud-status"></span>
       </div>
     </div>
     <div id="${containerId}-content"><div class="empty">Upload a workbook to see the dashboard.</div></div>
@@ -2585,9 +2622,9 @@ function makeModule(containerId, opts){
       document.head.appendChild(st);
     }
     host.innerHTML = `
-      <div style="border:1px dashed var(--border);border-radius:10px;padding:8px 12px;background:var(--panel2,#fafbfc);">
-        <button type="button" id="${id('toggle')}" class="dl-tab" style="font-weight:600;">➕ Add a new ${isMdr?'MDR':'CDR'} record (manual entry)</button>
-        <div id="${id('panel')}" style="display:none;margin-top:10px;">
+      <div id="${id('wrap')}">
+        <button type="button" id="${id('toggle')}" class="fab-new" aria-label="New ${isMdr?'MDR':'CDR'} entry">➕ New entry</button>
+        <div id="${id('panel')}" style="display:none;margin-top:10px;border:1px dashed var(--border);border-radius:10px;padding:10px 12px;background:var(--panel2,#fafbfc);">
           <div style="display:flex;flex-wrap:wrap;gap:10px;">${common}${isMdr?mdrFields:cdrFields}</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;">
             <button type="button" id="${id('save')}" class="dl-tab" style="background:#1d6fb8;color:#fff;border-color:#1d6fb8;">✔ Add record</button>
@@ -2607,7 +2644,7 @@ function makeModule(containerId, opts){
       if(o){ $('district').value = o; $('district').disabled = true; }
       if(BLOCK_LOCK){ $('block').value = BLOCK_LOCK.name; $('block').readOnly = true; }
     }
-    $('toggle').addEventListener('click', ()=>{ const p=$('panel'); p.style.display = p.style.display==='none' ? '' : 'none'; applyLock(); $('date').max = maxDateStr(); $('date').min = minDateStr(); });
+    $('toggle').addEventListener('click', ()=>{ const p=$('panel'); const open = p.style.display==='none'; p.style.display = open ? '' : 'none'; $('toggle').textContent = open ? '✕ Close' : '➕ New entry'; applyLock(); $('date').max = maxDateStr(); $('date').min = minDateStr(); if(open){ try{ p.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ p.scrollIntoView(); } } });
     applyLock();
     // Manual entry is available to BLOCK and DISTRICT logins only (admin/state and offline sessions never see it).
     function applyAccess(){
