@@ -277,7 +277,7 @@ header.has-lock h1{margin-top:34px;}
 body:has(#mpg:not([style*="display: none"])) #mpLangBtn{left:auto;right:calc(12px + env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top));bottom:auto;background:rgba(10,20,46,.72);border:1px solid rgba(190,215,255,.45);}
 /* phones & narrow windows: photo fills the screen, mother and child stay in view above a bottom sheet */
 @media(max-width:700px){
-  #mpg{align-items:flex-end;justify-content:center;padding:0 12px max(12px,env(safe-area-inset-bottom));
+  #mpg{align-items:flex-end;justify-content:center;padding:0 12px calc(max(12px,env(safe-area-inset-bottom)) + 44px);
     background:linear-gradient(180deg,var(--mp-edge) 0,var(--mp-edge) 52%,#0a1636 100%);}
   #mpg::before{inset:0 0 auto 0;height:min(60vh,540px);height:min(60svh,540px);
     background:linear-gradient(180deg,rgba(32,68,145,0) 72%,var(--mp-edge) 100%),var(--mp-photo) 76% 0/auto 100% no-repeat;}
@@ -293,6 +293,7 @@ body:has(#mpg:not([style*="display: none"])) #mpLangBtn{left:auto;right:calc(12p
 }
 @media(max-width:700px) and (max-height:760px){
   #mpg::before{height:48vh;height:48svh;}
+  #mpg{padding-bottom:calc(max(10px,env(safe-area-inset-bottom)) + 36px);}
   #mpg .box{padding:12px 14px 10px;max-height:none;}
   #mpg .lt-cloud{display:none;}
   #mpg h2{display:none;}
