@@ -2594,10 +2594,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
     document.getElementById('mplockName').textContent = FACILITY_LOCK ? (FACILITY_LOCK.name+' ('+mpFacKindLabel(FACILITY_LOCK)+'), '+DISTRICT_LOCK.name+' district') : (BLOCK_LOCK ? (BLOCK_LOCK.name+' block, '+DISTRICT_LOCK.name+' district') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'All districts (State)'));
     { const fm = document.getElementById('mpFacMgr'); if(fm) fm.style.display = (DISTRICT_LOCK && !BLOCK_LOCK && !FACILITY_LOCK && CLOUD_AUTH && CLOUD_AUTH.district!=='ADMIN') ? '' : 'none'; }
-    if(FACILITY_LOCK){   // SNCU/NBSU logins work on child deaths (CDR) only
-      const mt = document.querySelector('.tab-btn[data-tab="mdr"]'); if(mt) mt.style.display='none';
-      const ct = document.querySelector('.tab-btn[data-tab="cdr"]'); if(ct) ct.click();
-    }
+    // facility / SNCU / NBSU logins work on both MDR (place = Health Facilities) and CDR (place = Public facility) records of their own facility
     // A district login (not state, not block) can create block logins.
     // Block logins can save (merged into the district's records, touching only their own block); deleting stays district/admin only.
     document.querySelectorAll('[id$="-cloud-save"]').forEach(b=>{ b.style.display = ''; });
@@ -3043,16 +3040,17 @@ function makeModule(containerId, opts){
       const o = MDR_DISTRICTS.find(d=>normalizeDistrict(d)===want);
       if(o){ $('district').value = o; $('district').disabled = true; }
       if(BLOCK_LOCK){ $('block').value = BLOCK_LOCK.name; $('block').readOnly = true; }
-      if(FACILITY_LOCK && !isMdr){   // facility / SNCU / NBSU login: facility and place of death are fixed (institution death = Public facility)
+      if(FACILITY_LOCK){   // facility / SNCU / NBSU login: facility and place of death are fixed (institution death: MDR = Health Facilities, CDR = Public facility)
         $('facilityName').value = FACILITY_LOCK.name; $('facilityName').readOnly = true;
-        $('place').value = 'Public facility'; $('place').disabled = true;
+        $('place').value = isMdr ? 'Health Facilities' : 'Public facility'; $('place').disabled = true;
+        if(isMdr) $('place').dispatchEvent(new Event('change'));
       }
     }
     $('toggle').addEventListener('click', ()=>{ const p=$('panel'); const open = p.style.display==='none'; p.style.display = open ? '' : 'none'; $('toggle').textContent = open ? '✕ Close' : '➕ New entry'; applyLock(); $('date').max = maxDateStr(); $('date').min = minDateStr(); if(open){ try{ p.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ p.scrollIntoView(); } } });
     applyLock();
     // Manual entry is available to BLOCK and DISTRICT logins only (admin/state and offline sessions never see it).
     function applyAccess(){
-      const ok = !!DISTRICT_LOCK && !(FACILITY_LOCK && isMdr);
+      const ok = !!DISTRICT_LOCK;
       host.style.display = ok ? '' : 'none';
       if(!ok){ const pn = $('panel'); if(pn) pn.style.display = 'none'; }
       else applyLock();
@@ -3138,7 +3136,6 @@ function makeModule(containerId, opts){
       const miss = need.filter(k=>!v(k));
       if(miss.length){ msg('Please fill: '+miss.map(k=>labels[k]).join(', '), true); const el=$(miss[0]); if(el) el.focus(); return; }
       if(BLOCK_LOCK && !blockSame(v('block'), BLOCK_LOCK.name)){ msg('This login can only add records for '+BLOCK_LOCK.name+' block.', true); return; }
-      if(FACILITY_LOCK && isMdr){ msg('Facility logins add child death (CDR) records only.', true); return; }
       { const mi = MONTHS.indexOf(v('month')), yy = +v('year');
         if(mi>=0 && yy && (yy+'-'+pad2(mi+1)+'-01')>maxS){ msg('Reporting month cannot be after the month of '+isoToDmy(maxS)+' (today).', true); return; } }
       if(DISTRICT_LOCK && normalizeDistrict(v('district'))!==normalizeDistrict(DISTRICT_LOCK.name)){ msg('This login can only add records for '+DISTRICT_LOCK.name+'.', true); return; }
@@ -3150,8 +3147,8 @@ function makeModule(containerId, opts){
         rec = {
           district: normalizeDistrict(v('district')), block: v('block'), phcArea: v('phcArea'), subCentre: v('subCentre'),
           month: v('month'), year: v('year'), date: dateStr,
-          place: normalizePlaceValue(v('place')), period: normalizePeriodValue(v('period')),
-          directCause: v('directCause')==='Other' ? v('directCauseOther') : v('directCause'), associatedCause: v('associatedCause'), facilityName: ['Home','Transit'].includes(v('place')) ? '' : v('facilityName'),
+          place: normalizePlaceValue(FACILITY_LOCK ? 'Health Facilities' : v('place')), period: normalizePeriodValue(v('period')),
+          directCause: v('directCause')==='Other' ? v('directCauseOther') : v('directCause'), associatedCause: v('associatedCause'), facilityName: FACILITY_LOCK ? FACILITY_LOCK.name : (['Home','Transit'].includes(v('place')) ? '' : v('facilityName')),
           daysDeliveryToDeath: v('period')==='Post natal' ? v('days') : '',
           hrp: hrp, hrpDetails: isHrpYes(hrp) ? v('hrpDetails') : '',
           gravida: v('gravida'), para: v('para'),
@@ -3313,7 +3310,6 @@ function makeModule(containerId, opts){
     finally{ cloudBusy = false; }
   }
   async function cloudLoadModule(silent){
-    if(FACILITY_LOCK && containerId==='mdr') return;   // SNCU/NBSU logins use CDR only
     if(!cloudReady() || cloudBusy) return;
     cloudBusy = true;
     try{
@@ -3569,8 +3565,8 @@ function makeModule(containerId, opts){
       const fid = k=>`${containerId}-ed-${k}`;
       const field = ([k,label,type,optsL,wide])=>{
         let cur = r[k]==null ? '' : String(r[k]);
-        const placeLock = (k==='place' && FACILITY_LOCK && !isMdrM);   // facility / SNCU / NBSU login: death is always an institutional (public facility) death
-        if(placeLock) cur = 'Public facility';
+        const placeLock = (k==='place' && FACILITY_LOCK);   // facility / SNCU / NBSU login: death is always an institutional (public facility) death
+        if(placeLock) cur = isMdrM ? 'facility' : 'Public facility';
         let input;
         if(type==='select'){
           const o = optsL.slice();
@@ -3626,7 +3622,7 @@ function makeModule(containerId, opts){
         }
         const nr = Object.assign({}, r);   // fresh object (the search index cache lives on the old one)
         FIELDS.forEach(([k])=>{ nr[k] = g(k); });
-        if(FACILITY_LOCK && !isMdrM){ nr.place = 'Public facility'; nr.facilityName = FACILITY_LOCK.name; }   // institution death
+        if(FACILITY_LOCK){ nr.place = isMdrM ? 'facility' : 'Public facility'; nr.facilityName = FACILITY_LOCK.name; }   // institution death
         if(isMdrM){
           nr.place = normalizePlaceValue(nr.place); nr.period = normalizePeriodValue(nr.period);
           if(nr.period!=='postnatal') nr.daysDeliveryToDeath = '';
