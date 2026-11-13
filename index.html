@@ -189,7 +189,7 @@ header.has-lock h1{margin-top:34px;}
 <style id="mp-login-css">
 /* Login page: original dark theme, with tabs (District / State | Block / SC / PHC | SNCU / NBSU) */
 #mpg .lt-tabs{display:flex;gap:4px;background:#0f1115;border:1px solid #262b36;border-radius:10px;padding:4px;margin:0 0 14px;}
-#mpg .lt-tab{flex:1 1 0;min-width:0;width:auto;margin:0;padding:9px 4px;border:0;border-radius:7px;background:transparent;color:#9aa2b1;font-weight:700;font-size:12.5px;line-height:1.15;white-space:normal;cursor:pointer;}
+#mpg .lt-tab{flex:1 1 0;min-width:0;width:auto;margin:0;padding:9px 3px;border:0;border-radius:7px;background:transparent;color:#9aa2b1;font-weight:700;font-size:12px;line-height:1.15;white-space:normal;cursor:pointer;}
 #mpg .lt-tab.active{background:#2563eb;color:#fff;}
 #mpg .lt-help{margin:0 0 14px;font-size:12.5px;color:#9aa2b1;line-height:1.45;}
 #mpg .lt-pane[hidden]{display:none;}
@@ -253,12 +253,14 @@ header.has-lock h1{margin-top:34px;}
 <h2>MPCDSR Dashboard</h2>
 <div class="lt-tabs" role="tablist">
 <button type="button" class="lt-tab active" role="tab" data-pane="district">District / State</button>
-<button type="button" class="lt-tab" role="tab" data-pane="block">Block / SC / PHC</button>
+<button type="button" class="lt-tab" role="tab" data-pane="block">Block</button>
+<button type="button" class="lt-tab" role="tab" data-pane="facility">Facility</button>
 <button type="button" class="lt-tab" role="tab" data-pane="sncu">SNCU / NBSU</button>
 </div>
 <p class="lt-help" id="ltHelp"></p>
 <div class="lt-pane" data-pane="district"><div class="lt-f"><label>District / State</label><select id="ltDistSel"><option value="">Select…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
-<div class="lt-pane" data-pane="block" hidden><div class="lt-f"><label>District</label><select id="ltBlkDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Block</label><select id="ltBlkSel"><option value="">Select block…</option></select></div><div class="lt-f"><label>Facility type <span class="lt-opt">(SC / PHC / … — only for a facility login)</span></label><select id="ltFacType"><option value="">Select facility type…</option></select></div><div class="lt-f"><label>Facility</label><select id="ltFacSel"><option value="">Select facility…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="block" hidden><div class="lt-f"><label>District</label><select id="ltBlkDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Block</label><select id="ltBlkSel"><option value="">Select block…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="facility" hidden><div class="lt-f"><label>District</label><select id="ltFacDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Facility type</label><select id="ltFacType"><option value="">Select facility type…</option></select></div><div class="lt-f"><label>Facility</label><select id="ltFacSel"><option value="">Select facility…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
 <div class="lt-pane" data-pane="sncu" hidden><div class="lt-f"><label>District</label><select id="ltSncuDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Unit type</label><select id="ltSncuType"><option value="">Select unit type…</option></select></div><div class="lt-f"><label>Unit</label><select id="ltSncuSel"><option value="">Select unit…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
 <div class="lt-cloud" id="mpgCloud">☁ Checking cloud…</div>
 <div class="err" id="mpgErr"></div>
@@ -2717,7 +2719,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   }catch(e){}
 })();
 
-// ---- Login page tabs (District / State | Block / SC / PHC | SNCU / NBSU): drives the login logic above through its hidden controls.
+// ---- Login page tabs (District / State | Block | Facility | SNCU / NBSU): drives the login logic above through its hidden controls.
 (function loginTabs(){
   const $ = id=>document.getElementById(id);
   const L = {dist:$('mpgDist'), blk:$('mpgBlock'), sncu:$('mpgSncu'), pass:$('mpgPass'), btn:$('mpgBtn')};
@@ -2725,13 +2727,14 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   const esc = x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const HELP = {
     district:'Choose your district (or State) and enter the password. A district sees its own district; State sees all districts.',
-    block:'Block login: choose district and block, then enter the block passcode. SC / PHC (or other facility) login: also choose the facility type and facility, then enter that facility\'s passcode. You will only see your own block\'s or facility\'s data.',
+    block:'Choose district and block, then enter the block passcode. You will only see your own block\'s data.',
+    facility:'Choose district, facility type and facility, then enter the facility passcode. You will only see your own facility\'s data.',
     sncu:'Choose district, SNCU or NBSU and your unit, then enter the unit passcode. You will only see your own unit\'s data.'
   };
   const distAll = Array.from(L.dist.options).filter(o=>o.value);
   const optHtml = (ph, list)=>'<option value="">'+esc(ph)+'</option>'+list.map(o=>'<option value="'+esc(o.v)+'">'+esc(o.t)+'</option>').join('');
   $('ltDistSel').innerHTML = optHtml('Select…', distAll.map(o=>({v:o.value,t:o.textContent})));
-  ['ltBlkDist','ltSncuDist'].forEach(i=>{ $(i).innerHTML = optHtml('Select…', distAll.filter(o=>o.value!=='ADMIN').map(o=>({v:o.value,t:o.textContent}))); });
+  ['ltBlkDist','ltFacDist','ltSncuDist'].forEach(i=>{ $(i).innerHTML = optHtml('Select…', distAll.filter(o=>o.value!=='ADMIN').map(o=>({v:o.value,t:o.textContent}))); });
   let active = 'district';
   function showPane(name){
     active = name; err.textContent=''; err.style.color='';
@@ -2748,9 +2751,12 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   const typeSort = (a,b)=>{ const ia=TYPE_FIRST.indexOf(a), ib=TYPE_FIRST.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); };
   let facByType = {}, sncuByType = {};
   $('ltBlkDist').addEventListener('change', function(){
-    legacyFor(this.value); facByType = {};
+    legacyFor(this.value);
     const bo = Array.from(L.blk.options).filter(o=>o.value.indexOf('b:')===0);
     $('ltBlkSel').innerHTML = optHtml(this.value && !bo.length ? 'No block logins for this district' : 'Select block…', bo.map(o=>({v:o.value, t:o.textContent.replace(/^Block:\s*/,'')})));
+  });
+  $('ltFacDist').addEventListener('change', function(){
+    legacyFor(this.value); facByType = {};
     Array.from(L.blk.options).filter(o=>o.value.indexOf('f:FACILITY|')===0).forEach(o=>{ const p = labelParts(o.textContent); const k = p.k||'Facility'; (facByType[k] = facByType[k] || []).push({v:o.value, t:p.n}); });
     const types = Object.keys(facByType).sort(typeSort);
     $('ltFacType').innerHTML = optHtml(this.value && !types.length ? 'No facility logins for this district' : 'Select facility type…', types.map(t=>({v:t,t:t})));
@@ -2779,17 +2785,18 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
       code = $('ltDistSel').value; if(!code){ err.textContent='Please select your district or State.'; return; }
     } else if(active==='block'){
       code = $('ltBlkDist').value; if(!code){ err.textContent='Please select your district.'; return; }
-      const blk = $('ltBlkSel').value, fac = $('ltFacSel').value;
-      if($('ltFacType').value && !fac){ err.textContent='Please select your facility.'; return; }
-      if(!blk && !fac){ err.textContent='Please select your block (or a facility for an SC / PHC login).'; return; }
-      scope = fac || blk;   // a chosen facility means a facility login, otherwise a block login
+      scope = $('ltBlkSel').value; if(!scope){ err.textContent='Please select your block.'; return; }
+    } else if(active==='facility'){
+      code = $('ltFacDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      if(!$('ltFacType').value){ err.textContent='Please select the facility type.'; return; }
+      scope = $('ltFacSel').value; if(!scope){ err.textContent='Please select your facility.'; return; }
     } else {
       code = $('ltSncuDist').value; if(!code){ err.textContent='Please select your district.'; return; }
       if(!$('ltSncuType').value){ err.textContent='Please select SNCU or NBSU.'; return; }
       scope = $('ltSncuSel').value; if(!scope){ err.textContent='Please select your unit.'; return; }
     }
     legacyFor(code);
-    L.blk.value = active==='block' ? scope : '';
+    L.blk.value = (active==='block' || active==='facility') ? scope : '';
     L.sncu.value = active==='sncu' ? scope : '';
     L.pass.value = pass;
     L.btn.click();
