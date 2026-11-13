@@ -186,6 +186,31 @@ header.has-lock h1{margin-top:34px;}
 .cloud-row .cloud-status{font-size:12px;color:var(--muted);flex:1 1 100%;overflow-wrap:anywhere;}
 .cloud-row .cloud-status:empty{display:none;}
 </style>
+<style id="mp-login-css">
+/* ---- Login page: tabbed layout (District / State | Block | Facility | SNCU / NBSU) ---- */
+#mpg{background:linear-gradient(160deg,#08223d 0%,#0b4467 55%,#0a2f4f 100%);}
+#mpg .box.lt{width:min(520px,94vw);background:#fff;color:#12263f;border:0;border-radius:22px;padding:28px 26px;box-shadow:0 24px 70px rgba(0,0,0,.4);font-family:'Segoe UI',Roboto,Arial,sans-serif;}
+#mpg .lt-title{margin:0 0 16px;font-size:26px;line-height:1.15;color:#0b3558;font-weight:800;}
+#mpg .lt-tabs{display:flex;gap:4px;background:#eef2f6;border-radius:14px;padding:5px;margin-bottom:14px;}
+#mpg .lt-tab{flex:1 1 0;min-width:0;width:auto;margin:0;padding:11px 4px;border:0;border-radius:10px;background:transparent;color:#5a6b7f;font-weight:700;font-size:14px;line-height:1.15;white-space:normal;cursor:pointer;}
+#mpg .lt-tab.active{background:#fff;color:#0b2a4a;box-shadow:0 2px 7px rgba(0,0,0,.14);}
+#mpg .lt-help{margin:0 0 16px;color:#5f7184;font-size:14.5px;line-height:1.45;}
+#mpg .lt-pane[hidden]{display:none;}
+#mpg .lt-f{margin-bottom:14px;}
+#mpg .lt-f label{display:block;margin:0 0 6px;font-weight:800;color:#0b2a4a;font-size:14.5px;}
+#mpg .lt-f select,#mpg .lt-f input{width:100%;margin:0;padding:13px 14px;border:1px solid #cdd6e0;border-radius:14px;background:#fff;color:#12263f;font-size:16px;}
+#mpg .lt-f select:disabled{background:#f3f6f9;color:#8b98a8;}
+#mpg .lt-pw{position:relative;}
+#mpg .lt-pw input{padding-right:78px;}
+#mpg .lt-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;margin:0;padding:8px 12px;border:0;background:transparent;color:#0b3558;font-weight:800;font-size:14px;cursor:pointer;}
+#mpg .lt-cloud{margin:4px 0 12px;font-size:14.5px;color:#5f7184;}
+#mpg .lt-cloud.ok{color:#1b7f4b;} #mpg .lt-cloud.warn{color:#b26a00;}
+#mpg .box.lt .err{min-height:18px;margin:0 0 10px;color:#c0392b;font-size:14px;}
+#mpg .lt-go{width:100%;padding:15px;border:0;border-radius:14px;background:linear-gradient(90deg,#0e7ea0,#0b3558);color:#fff;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 8px 20px rgba(11,53,88,.35);}
+#mpg .lt-off{margin:14px 0 0;text-align:center;font-size:14.5px;}
+#mpg .lt-off a{color:#0b3558;text-decoration:underline;}
+@media(max-width:420px){ #mpg .box.lt{padding:22px 16px;border-radius:18px;} #mpg .lt-title{font-size:22px;} #mpg .lt-tab{font-size:12.5px;padding:10px 2px;} }
+</style>
 <style id="mp-mobile-css">
   /* ---- Mobile hardening (GitHub Pages / phones) ---- */
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -230,11 +255,28 @@ header.has-lock h1{margin-top:34px;}
 </style>
 </head>
 <body>
-<div id="mpg"><div class="box"><h2>MPCDSR Dashboard</h2><p>Select your district (and your block or facility, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
-<select id="mpgDist"></select>
-<select id="mpgBlock" style="display:none"></select>
-<select id="mpgSncu" style="display:none"></select>
-<div style="position:relative;"><input id="mpgPass" type="password" placeholder="Passcode" autocomplete="off" style="padding-right:64px;"><button type="button" id="mpgEye" aria-label="Show passcode" aria-pressed="false" style="position:absolute;right:6px;top:6px;width:auto;padding:5px 10px;background:transparent;color:#9aa2b1;font-size:12px;font-weight:600;">Show</button></div><div class="err" id="mpgErr"></div><button type="button" id="mpgBtn">Open dashboard</button><p style="margin:12px 0 0;text-align:center;font-size:12.5px;"><a href="#" id="mpgOffline" style="color:#60a5fa;text-decoration:underline;">Use offline (no cloud)</a></p></div></div>
+<div id="mpg"><div class="box lt">
+<h2 class="lt-title">🩺 MPCDSR Dashboard</h2>
+<div class="lt-tabs" role="tablist">
+<button type="button" class="lt-tab active" role="tab" data-pane="district">District / State</button>
+<button type="button" class="lt-tab" role="tab" data-pane="block">Block</button>
+<button type="button" class="lt-tab" role="tab" data-pane="facility">Facility</button>
+<button type="button" class="lt-tab" role="tab" data-pane="sncu">SNCU / NBSU</button>
+</div>
+<p class="lt-help" id="ltHelp"></p>
+<div class="lt-pane" data-pane="district"><div class="lt-f"><label>District / State</label><select id="ltDistSel"><option value="">Select…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="block" hidden><div class="lt-f"><label>District</label><select id="ltBlkDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Block</label><select id="ltBlkSel"><option value="">Select block…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="facility" hidden><div class="lt-f"><label>District</label><select id="ltFacDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Facility type</label><select id="ltFacType"><option value="">Select facility type…</option></select></div><div class="lt-f"><label>Facility</label><select id="ltFacSel"><option value="">Select facility…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-pane" data-pane="sncu" hidden><div class="lt-f"><label>District</label><select id="ltSncuDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Unit type</label><select id="ltSncuType"><option value="">Select unit type…</option></select></div><div class="lt-f"><label>Unit</label><select id="ltSncuSel"><option value="">Select unit…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
+<div class="lt-cloud" id="mpgCloud">☁ Checking cloud…</div>
+<div class="err" id="mpgErr"></div>
+<button type="button" id="mpgGo" class="lt-go">Sign in</button>
+<p class="lt-off"><a href="#" id="mpgOffline">Use offline (no cloud)</a></p>
+<div id="mpgLegacy" style="display:none" aria-hidden="true">
+<select id="mpgDist"></select><select id="mpgBlock"></select><select id="mpgSncu"></select>
+<input id="mpgPass" type="password" autocomplete="off"><button type="button" id="mpgEye">Show</button><button type="button" id="mpgBtn">Open dashboard</button>
+</div>
+</div></div>
 <header>
   <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-fac" id="mpFacMgr" style="display:none" onclick="mpOpenFacilityManager()" title="Create facility logins (SNCU/NBSU and all facilities) for this district">🏥 Facility logins</button><button type="button" class="lk-text" onclick="mpDistrictLogout()">Log out</button><button type="button" class="lk-icon" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
   <h1 style="color: orange;">Maternal & Child Death Review — Dashboard</h1>
@@ -1543,8 +1585,9 @@ const CDR_CAUSE_CATEGORIES = [
   {name:'Birth asphixia', re:/asph[yi]x/i}, // covers both "asphyxia" and the "asphixia" misspelling actually used in the data
   {name:'Diarrhoea', re:/diarrh/i},
   {name:'Jaundice', re:/jaundice/i},
-  {name:'Pre term', re:/(?<!other\s+than\s)pre[\s-]*term|length\s+of\s+gestation|fetal\s+growth|foetal\s+growth/i}, // incl. "Disorders relating to length of gestation & fetal growth"
-  {name:'LBW (OTHER THAN PRETERM)', re:/\blbw\b|low\s*birth\s*weight/i},
+  {name:'Pre term', re:/(?<!other\s+than\s)(?<!with\s)pre[\s-]*term|length\s+of\s+gestation|fetal\s+growth|foetal\s+growth/i}, // incl. "Disorders relating to length of gestation & fetal growth"
+  {name:'LBW (OTHER THAN PRETERM)', re:/\blbw\b(?!\s*\(?\s*with)|low\s*birth\s*weight(?!\s*\(?\s*with)/i},
+  {name:'LBW (WITH PRETERM)', re:/(\blbw\b|low\s*birth\s*weight)\s*\(?\s*with\s*pre[\s-]*term/i},
   {name:'Malaria', re:/malaria/i},
   {name:'Malnutrition and other nutritional deficiencies', re:/malnutrition|nutrition/i},
   {name:'Measles', re:/measles/i},
@@ -1555,15 +1598,18 @@ const CDR_CAUSE_CATEGORIES = [
   {name:'Other bleeding disorders', re:/bleeding/i},
   {name:'Other congenital malformations', re:/congenital/i},
 ];
-// Birth weight below 2.5 kg (2500 g) in a child under 1 year is counted as LBW (OTHER THAN PRETERM) whenever the
-// recorded cause would otherwise fall under "Other" / blank. A cause that is already specific (Pre term, Birth
-// asphixia, Sepsis, ...) is left unchanged so the cause categories stay mutually exclusive and still add up.
+// Birth weight below 2.5 kg (2500 g) in a child under 1 year is counted as low birth weight:
+//   * cause would otherwise be "Other" / blank  -> LBW (OTHER THAN PRETERM)
+//   * cause is Pre term                         -> LBW (WITH PRETERM)
+// A cause that is already specific (Birth asphixia, Sepsis, ...) is left unchanged so the cause categories stay
+// mutually exclusive and still add up to the total. An explicit "LBW (WITH PRETERM)" entry is always honoured.
 const CDR_LBW_LABEL = 'LBW (OTHER THAN PRETERM)';
+const CDR_LBW_PRETERM_LABEL = 'LBW (WITH PRETERM)';
 function classifyCdrCause(rec){
   const c = classifyCdrCauseBase(rec);
-  if(c==='Other'){
+  if(c==='Other' || c==='Pre term'){
     const g = cdrBirthWeightGrams(rec);
-    if(g!==null && g<2500 && cdrIsBelowOneYear(rec)) return CDR_LBW_LABEL;
+    if(g!==null && g<2500 && cdrIsBelowOneYear(rec)) return c==='Pre term' ? CDR_LBW_PRETERM_LABEL : CDR_LBW_LABEL;
   }
   return c;
 }
@@ -2677,6 +2723,102 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
       if(DISTRICT_ACCESS[saved.c] && saved.h===DISTRICT_ACCESS[saved.c].h){ DISTRICT_LOCK={code:saved.c,name:DISTRICT_ACCESS[saved.c].name}; CLOUD_AUTH={district:saved.c,pass:saved.p}; startApp(); return; }
     }
   }catch(e){}
+})();
+
+// ---- Login page tabs (District / State | Block | Facility | SNCU / NBSU): drives the login logic above through its hidden controls.
+(function loginTabs(){
+  const $ = id=>document.getElementById(id);
+  const L = {dist:$('mpgDist'), blk:$('mpgBlock'), sncu:$('mpgSncu'), pass:$('mpgPass'), btn:$('mpgBtn')};
+  const err = $('mpgErr');
+  const esc = x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const HELP = {
+    district:'Choose your district (or State) and enter the password. A district sees its own district; State sees all districts.',
+    block:'Choose district and block, then enter the block passcode. You will only see your own block\'s data.',
+    facility:'Choose district, facility type and facility, then enter the facility passcode. You will only see your own facility\'s data.',
+    sncu:'Choose district, SNCU or NBSU and your unit, then enter the unit passcode. You will only see your own unit\'s data.'
+  };
+  const distAll = Array.from(L.dist.options).filter(o=>o.value);
+  const optHtml = (ph, list)=>'<option value="">'+esc(ph)+'</option>'+list.map(o=>'<option value="'+esc(o.v)+'">'+esc(o.t)+'</option>').join('');
+  $('ltDistSel').innerHTML = optHtml('Select…', distAll.map(o=>({v:o.value,t:o.textContent})));
+  ['ltBlkDist','ltFacDist','ltSncuDist'].forEach(i=>{ $(i).innerHTML = optHtml('Select…', distAll.filter(o=>o.value!=='ADMIN').map(o=>({v:o.value,t:o.textContent}))); });
+  let active = 'district';
+  function showPane(name){
+    active = name; err.textContent=''; err.style.color='';
+    document.querySelectorAll('#mpg .lt-tab').forEach(b=>b.classList.toggle('active', b.dataset.pane===name));
+    document.querySelectorAll('#mpg .lt-pane').forEach(p=>{ p.hidden = p.dataset.pane!==name; });
+    $('ltHelp').textContent = HELP[name];
+  }
+  document.querySelectorAll('#mpg .lt-tab').forEach(b=>b.addEventListener('click', ()=>showPane(b.dataset.pane)));
+  showPane('district');
+  // fill the legacy (hidden) block/SNCU lists for a district, then read the options back
+  function legacyFor(code){ L.dist.value = code; L.dist.dispatchEvent(new Event('change')); }
+  const labelParts = t=>{ const m = String(t).match(/^(.*?):\s*([\s\S]*)$/); return m ? {k:m[1], n:m[2]} : {k:'', n:t}; };
+  let facByType = {}, sncuByType = {};
+  $('ltBlkDist').addEventListener('change', function(){
+    legacyFor(this.value);
+    const bo = Array.from(L.blk.options).filter(o=>o.value.indexOf('b:')===0);
+    $('ltBlkSel').innerHTML = optHtml(this.value ? (bo.length ? 'Select block…' : 'No block logins for this district') : 'Select block…', bo.map(o=>({v:o.value, t:o.textContent.replace(/^Block:\s*/,'')})));
+  });
+  $('ltFacDist').addEventListener('change', function(){
+    legacyFor(this.value); facByType = {};
+    Array.from(L.blk.options).filter(o=>o.value.indexOf('f:FACILITY|')===0).forEach(o=>{ const p = labelParts(o.textContent); (facByType[p.k||'Facility'] = facByType[p.k||'Facility'] || []).push({v:o.value, t:p.n}); });
+    const types = Object.keys(facByType).sort();
+    $('ltFacType').innerHTML = optHtml(this.value && !types.length ? 'No facility logins for this district' : 'Select facility type…', types.map(t=>({v:t,t:t})));
+    $('ltFacSel').innerHTML = optHtml('Select facility…', []);
+  });
+  $('ltFacType').addEventListener('change', function(){ $('ltFacSel').innerHTML = optHtml('Select facility…', facByType[this.value]||[]); });
+  $('ltSncuDist').addEventListener('change', function(){
+    legacyFor(this.value); sncuByType = {};
+    Array.from(L.sncu.options).filter(o=>o.value.indexOf('f:')===0).forEach(o=>{ const p = labelParts(o.textContent); (sncuByType[p.k] = sncuByType[p.k] || []).push({v:o.value, t:p.n}); });
+    const types = Object.keys(sncuByType).sort();
+    $('ltSncuType').innerHTML = optHtml(this.value && !types.length ? 'No SNCU / NBSU logins for this district' : 'Select unit type…', types.map(t=>({v:t,t:t})));
+    $('ltSncuSel').innerHTML = optHtml('Select unit…', []);
+  });
+  $('ltSncuType').addEventListener('change', function(){ $('ltSncuSel').innerHTML = optHtml('Select unit…', sncuByType[this.value]||[]); });
+  // Show / Hide passcode buttons
+  document.querySelectorAll('#mpg .lt-eye').forEach(eye=>eye.addEventListener('click', ()=>{
+    const inp = eye.parentNode.querySelector('input'); const show = inp.type==='password';
+    inp.type = show ? 'text' : 'password'; eye.textContent = show ? 'Hide' : 'Show'; eye.setAttribute('aria-pressed', String(show)); inp.focus();
+  }));
+  function go(){
+    err.textContent=''; err.style.color='';
+    const pane = document.querySelector('#mpg .lt-pane[data-pane="'+active+'"]');
+    const pass = pane.querySelector('.lt-pass').value;
+    let code, scope = '';
+    if(active==='district'){
+      code = $('ltDistSel').value; if(!code){ err.textContent='Please select your district or State.'; return; }
+    } else if(active==='block'){
+      code = $('ltBlkDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      scope = $('ltBlkSel').value; if(!scope){ err.textContent='Please select your block.'; return; }
+    } else if(active==='facility'){
+      code = $('ltFacDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      if(!$('ltFacType').value){ err.textContent='Please select the facility type.'; return; }
+      scope = $('ltFacSel').value; if(!scope){ err.textContent='Please select your facility.'; return; }
+    } else {
+      code = $('ltSncuDist').value; if(!code){ err.textContent='Please select your district.'; return; }
+      if(!$('ltSncuType').value){ err.textContent='Please select SNCU or NBSU.'; return; }
+      scope = $('ltSncuSel').value; if(!scope){ err.textContent='Please select your unit.'; return; }
+    }
+    legacyFor(code);
+    L.blk.value = (active==='block' || active==='facility') ? scope : '';
+    L.sncu.value = active==='sncu' ? scope : '';
+    L.pass.value = pass;
+    L.btn.click();
+  }
+  $('mpgGo').addEventListener('click', go);
+  document.querySelectorAll('#mpg .lt-pass').forEach(i=>i.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); }));
+  // cloud status line
+  (async function(){
+    const el = $('mpgCloud');
+    const set = (cls,t)=>{ el.className='lt-cloud '+cls; el.textContent=t; };
+    if(typeof REC_URL==='undefined' || !REC_URL){ set('warn','☁ Cloud not configured — use offline mode'); return; }
+    if(typeof fetch!=='function'){ set('',''); return; }
+    try{
+      const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 9000);
+      const r = await fetch(REC_URL, {cache:'no-store', signal:ctl.signal}); clearTimeout(t);
+      const j = await r.json(); set(j && j.ok ? 'ok' : 'warn', j && j.ok ? '☁ Cloud connected ✓' : '☁ Cloud answered but is not ready');
+    }catch(e){ set('warn','☁ Cloud not reachable right now — you can use offline mode'); }
+  })();
 })();
 // ================== end shared gate/cloud helpers ==================
 
