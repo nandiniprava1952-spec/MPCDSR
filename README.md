@@ -47,5 +47,8 @@ Replace `index.html` and commit. Installed apps pick up the new version the next
 - Records are removed from the cloud immediately. If a cloud call fails for a district, that district is left unchanged and named in the status line; its records stay in the list so you can retry.
 - The bulk **🗑 Delete cloud records** button is unchanged (district and state logins only).
 
+## Login screen background
+The login screen uses a full-screen photo (mother and child at sunset), embedded in `index.html` as the `data:` URL inside `<style id="mp-login-bg">`. To change the picture, replace that `url(data:image/jpeg;base64,...)` value (a JPEG/PNG/WebP data URL works). The photo is only visible on the login screen; it disappears after login.
+
 ## Language
 A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interface; the choice is remembered on the device. Data, district/block/facility names and exported files stay as entered.
