@@ -205,37 +205,6 @@ header.has-lock h1{margin-top:34px;}
 #mpg .lt-off a{color:#60a5fa;text-decoration:underline;}
 @media(max-width:420px){ #mpg .lt-tab{font-size:12px;padding:9px 2px;} }
 </style>
-<style id="mp-login-themes">
-/* Block tab = SamMPurna look (dark brown + orange); Facility tab = Autoclave look (white card on blue gradient) */
-#mpg .lt-go{margin-top:2px;}
-#mpg .viewpw{width:auto;background:transparent;padding:0;margin:-4px 0 10px;font-weight:500;font-size:12.5px;text-decoration:underline;border:0;cursor:pointer;min-height:0;}
-#mpg:not([data-theme="block"]) .viewpw{display:none;}
-#mpg[data-theme="block"]{background:#120c08;}
-#mpg[data-theme="block"] .box{background:#1c130c;border-color:#2e2015;color:#f5e9de;font-family:'IBM Plex Sans',Segoe UI,Arial,sans-serif;}
-#mpg[data-theme="block"] h2{color:#fb923c;}
-#mpg[data-theme="block"] .lt-help,#mpg[data-theme="block"] .lt-cloud{color:#c9a58c;}
-#mpg[data-theme="block"] .lt-cloud.ok{color:#3fbf7f;} #mpg[data-theme="block"] .lt-cloud.warn{color:#e8b84b;}
-#mpg[data-theme="block"] select,#mpg[data-theme="block"] input{background:#120c08;border-color:#2e2015;color:#f5e9de;}
-#mpg[data-theme="block"] .lt-tabs{background:#120c08;border-color:#2e2015;}
-#mpg[data-theme="block"] .lt-tab{color:#c9a58c;}
-#mpg[data-theme="block"] .lt-tab.active,#mpg[data-theme="block"] .lt-go{background:#f97316;color:#fff;}
-#mpg[data-theme="block"] .viewpw,#mpg[data-theme="block"] .lt-off a{color:#fb923c;}
-#mpg[data-theme="block"] .lt-pane[data-pane="block"] .lt-f label{display:none;}
-#mpg[data-theme="facility"]{background:linear-gradient(135deg,#081d33,#0d3b63 55%,#0e7c9e);padding:20px;box-sizing:border-box;}
-#mpg[data-theme="facility"] .box{background:#fff;border:0;border-radius:14px;padding:26px 26px 20px;width:min(380px,100%);box-shadow:0 20px 50px rgba(0,0,0,.35);color:#101c28;}
-#mpg[data-theme="facility"] h2{color:#0d3b63;font-size:19px;}
-#mpg[data-theme="facility"] .lt-help,#mpg[data-theme="facility"] .lt-cloud{color:#5c7488;font-size:12.5px;}
-#mpg[data-theme="facility"] .lt-cloud.ok{color:#1e8a55;} #mpg[data-theme="facility"] .lt-cloud.warn{color:#b26a00;}
-#mpg[data-theme="facility"] .lt-f label{font-size:11.5px;font-weight:700;color:#101c28;}
-#mpg[data-theme="facility"] select,#mpg[data-theme="facility"] input{background:#fff;border:1px solid #c5d2dc;color:#101c28;padding:9px 10px;}
-#mpg[data-theme="facility"] .lt-tabs{background:#eef2f5;border:0;padding:3px;}
-#mpg[data-theme="facility"] .lt-tab{color:#5c7488;border-radius:8px;}
-#mpg[data-theme="facility"] .lt-tab.active{background:#fff;color:#0d3b63;box-shadow:0 1px 3px rgba(0,0,0,.15);}
-#mpg[data-theme="facility"] .lt-eye{color:#0d3b63;font-weight:700;}
-#mpg[data-theme="facility"] .lt-go{background:linear-gradient(135deg,#1f6f9f,#0d3b63);border-radius:9px;box-shadow:0 4px 12px rgba(18,90,134,.25);}
-#mpg[data-theme="facility"] .lt-off a{color:#1f6f9f;}
-#mpg[data-theme="facility"] .err{color:#b3261e;}
-</style>
 <style id="mp-mobile-css">
   /* ---- Mobile hardening (GitHub Pages / phones) ---- */
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -290,7 +259,7 @@ header.has-lock h1{margin-top:34px;}
 </div>
 <p class="lt-help" id="ltHelp"></p>
 <div class="lt-pane" data-pane="district"><div class="lt-f"><label>District / State</label><select id="ltDistSel"><option value="">Select…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
-<div class="lt-pane" data-pane="block" hidden><div class="lt-f"><label>District</label><select id="ltBlkDist" aria-label="District"><option value="">Select district…</option></select></div><div class="lt-f" id="ltBlkWrap" style="display:none"><label>Block</label><select id="ltBlkSel" aria-label="Block"><option value="">Select block…</option></select></div><div class="lt-f"><label>Passcode</label><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="viewpw" id="ltBlkView">View passcode</button></div></div>
+<div class="lt-pane" data-pane="block" hidden><div class="lt-f"><label>District</label><select id="ltBlkDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Block</label><select id="ltBlkSel"><option value="">Select block…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
 <div class="lt-pane" data-pane="facility" hidden><div class="lt-f"><label>District</label><select id="ltFacDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Facility type</label><select id="ltFacType"><option value="">Select facility type…</option></select></div><div class="lt-f"><label>Facility</label><select id="ltFacSel"><option value="">Select facility…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
 <div class="lt-pane" data-pane="sncu" hidden><div class="lt-f"><label>District</label><select id="ltSncuDist"><option value="">Select…</option></select></div><div class="lt-f"><label>Unit type</label><select id="ltSncuType"><option value="">Select unit type…</option></select></div><div class="lt-f"><label>Unit</label><select id="ltSncuSel"><option value="">Select unit…</option></select></div><div class="lt-f"><label>Passcode</label><div class="lt-pw"><input type="password" class="lt-pass" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Passcode"><button type="button" class="lt-eye" aria-pressed="false">Show</button></div></div></div>
 <div class="lt-cloud" id="mpgCloud">☁ Checking cloud…</div>
@@ -2758,7 +2727,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   const esc = x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const HELP = {
     district:'Choose your district (or State) and enter the password. A district sees its own district; State sees all districts.',
-    block:'Select your district, then your block, and enter your passcode. You will only see your own block\'s records.',
+    block:'Choose district and block, then enter the block passcode. You will only see your own block\'s data.',
     facility:'Choose district, facility type and facility, then enter the facility passcode. You will only see your own facility\'s data.',
     sncu:'Choose district, SNCU or NBSU and your unit, then enter the unit passcode. You will only see your own unit\'s data.'
   };
@@ -2772,8 +2741,6 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     document.querySelectorAll('#mpg .lt-tab').forEach(b=>b.classList.toggle('active', b.dataset.pane===name));
     document.querySelectorAll('#mpg .lt-pane').forEach(p=>{ p.hidden = p.dataset.pane!==name; });
     $('ltHelp').textContent = HELP[name];
-    $('mpg').setAttribute('data-theme', name==='block' ? 'block' : name==='facility' ? 'facility' : 'default');
-    $('mpgGo').textContent = name==='facility' ? 'Sign in' : 'Open dashboard';
   }
   document.querySelectorAll('#mpg .lt-tab').forEach(b=>b.addEventListener('click', ()=>showPane(b.dataset.pane)));
   showPane('district');
@@ -2788,8 +2755,6 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     const bo = Array.from(L.blk.options).filter(o=>o.value.indexOf('b:')===0);
     $('ltBlkSel').innerHTML = optHtml(this.value && !bo.length ? 'No block logins for this district' : 'Select block…', bo.map(o=>({v:o.value, t:o.textContent.replace(/^Block:\s*/,'')})));
   });
-  $('ltBlkDist').addEventListener('change', function(){ $('ltBlkWrap').style.display = this.value ? '' : 'none'; });   // block list appears once a district is chosen
-  { const vb = $('ltBlkView'); vb.addEventListener('click', function(){ const inp = vb.parentNode.querySelector('input'); const show = inp.type==='password'; inp.type = show ? 'text' : 'password'; vb.textContent = show ? 'Hide passcode' : 'View passcode'; }); }
   $('ltFacDist').addEventListener('change', function(){
     legacyFor(this.value); facByType = {};
     Array.from(L.blk.options).filter(o=>o.value.indexOf('f:FACILITY|')===0).forEach(o=>{ const p = labelParts(o.textContent); const k = p.k||'Facility'; (facByType[k] = facByType[k] || []).push({v:o.value, t:p.n}); });
