@@ -28,13 +28,24 @@ Replace `index.html` and commit. Installed apps pick up the new version the next
 - Cloud records and login still call your Google Apps Script (deploy it with access "Anyone"). These calls are never cached, so records need a connection; the app shell itself opens offline.
 
 ## Facility logins (SNCU / NBSU and all facilities)
-- A **district** login clicks **🏥 Facility logins** (top bar). The list has the district's SNCU/NBSUs plus every facility from the facility master (PHC, CHC, UPHC, SDH, DHH, MCH, SC, UHWC, AHWC, ...). Filter by type or search by name/code, enter or generate (🎲) a passcode per facility, then download a *logins file* + a passcode list (keep the list private).
-- Each facility opens the dashboard, taps **Load facility logins file** (once per device), picks its district, then its facility, and enters its passcode.
+- Facility logins are **built into the page** (`FACILITY_ACCESS` in `index.html`), like the block logins. There is no logins file to load.
+- A facility officer opens the dashboard, picks their district, then their facility (SNCU/NBSU in the second list; PHC, CHC, SC, etc. in the Block / Facility list, shown with the facility code) and enters the facility's passcode.
 - Facility logins work on **CDR** only: they see/add/edit the records whose *Name of facility* is their facility, and can save them to the cloud (other facilities' and blocks' records are never touched). They cannot delete cloud records.
-- Facility master (`FACILITY_MASTER`, from facility.csv) is embedded in `index.html`; to refresh it, regenerate that constant.
+- Each entry holds the district's cloud passcode encrypted under the facility's passcode (PBKDF2 + AES-GCM). No passcode or hash of it is stored in the page.
+- Facility master (`FACILITY_MASTER`, from facility.csv) is embedded in `index.html`.
+- **If a district passcode changes, or facilities are added/renamed,** the entries must be regenerated from the private passcode list and the new district passcodes, and `index.html` republished.
 
 ## Passcode lists (private)
-`facility_passcodes.zip` (kept OUTSIDE this repo) holds one passcode per facility. In a district login: **Facility logins > Import passcode list (CSV) > Create logins file**. Never upload the passcode CSVs to GitHub.
+`facility_passcodes.zip` (kept OUTSIDE this repo) holds one passcode per facility; give each facility only its own. Never upload the passcode CSVs to GitHub.
+
+## Deleting records
+- **📋 Records** lists the records a login can see. Block, district and state logins can delete them (facility logins cannot):
+  - **One record:** **🗑 Delete** on its row, or inside **👁 View**.
+  - **Several:** tick the boxes (the header box ticks every row shown), or click **☑ Select all N matching** (it follows the search filter), then **🗑 Delete selected (N)**. Changing the filter clears the selection, so nothing hidden is ever deleted.
+- Deleting 10 or more records asks you to type `DELETE` as well as confirm. The confirmation lists the count per district / block.
+- Scope: block login = own block only; district login = own district; state login = any district.
+- Records are removed from the cloud immediately. If a cloud call fails for a district, that district is left unchanged and named in the status line; its records stay in the list so you can retry.
+- The bulk **🗑 Delete cloud records** button is unchanged (district and state logins only).
 
 ## Language
 A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interface; the choice is remembered on the device. Data, district/block/facility names and exported files stay as entered.
