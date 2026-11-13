@@ -3192,15 +3192,15 @@ function makeModule(containerId, opts){
       const shown = idx.slice(0, LIMIT);
       const th = t=>`<th style="text-align:left;padding:6px 8px;">${t}</th>`;
       const td = t=>`<td>${escapeHtml(t==null?'':t)}</td>`;
-      const head = isMdrM ? ['','District','Block','Mother','Husband / Guardian','Age','Date of death','Place','Period','Month / Year']
-                          : ['','District','Block','Sex','Date of birth','Date of death','Age','Age category','Place','Month / Year'];
+      const head = isMdrM ? ['District','Block','Mother','Husband / Guardian','Age','Date of death','Place','Period','Month / Year','Actions']
+                          : ['District','Block','Sex','Date of birth','Date of death','Age','Age category','Place','Month / Year','Actions'];
       const rows = shown.map(i=>{
         const r = all[i];
         const my = [r.month,r.year].filter(Boolean).join(' ');
-        const eb = `<td><button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;">✏ Edit</button></td>`;
-        return '<tr>'+eb+(isMdrM
+        const eb = `<td style="white-space:nowrap;"><button type="button" class="dl-tab mp-rec-view" data-i="${i}" style="padding:4px 10px;min-height:0;">👁 View</button> <button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;">✏ Edit</button></td>`;
+        return '<tr>'+(isMdrM
           ? td(r.district)+td(r.block)+td(r.nameCombined||r.deceasedName)+td(r.husbandGuardian)+td(r.age)+td(r.date)+td(PLACE_LABELS[r.place]||r.place)+td(PERIOD_LABELS[r.period]||r.period)+td(my)
-          : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(my))+'</tr>';
+          : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(my))+eb+'</tr>';
       }).join('');
       const scope = BLOCK_LOCK ? (BLOCK_LOCK.name+' block') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'all districts');
       panel.innerHTML = `<div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--panel2);">
@@ -3217,6 +3217,25 @@ function makeModule(containerId, opts){
       if(qi){ let t=null; qi.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>{ q=qi.value; render(); const n=document.getElementById(`${containerId}-rp-q`); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } },250); }); }
       document.getElementById(`${containerId}-rp-close`).onclick = ()=>{ open=false; render(); };
       panel.querySelectorAll('.mp-rec-edit').forEach(b=>{ b.onclick = ()=>editRecord(+b.dataset.i); });
+      panel.querySelectorAll('.mp-rec-view').forEach(b=>{ b.onclick = ()=>viewRecord(+b.dataset.i); });
+    }
+    function viewRecord(i){
+      const r = recs()[i]; if(!r) return;
+      const show = (k,v)=>{ if(isMdrM && k==='place') return PLACE_LABELS[v]||v; if(isMdrM && k==='period') return PERIOD_LABELS[v]||v; return v; };
+      const rowsH = [['District',r.district]].concat(FIELDS.filter(f=>!(isMdrM && r.nameCombined && (f[0]==='deceasedName'||f[0]==='husbandGuardian'))).map(f=>[f[1].replace(/ \(dd-mm-yyyy\)/,''), show(f[0], r[f[0]])]))
+        .concat(isMdrM && r.nameCombined ? [['Name of the Deceased Mother / Husband / Guardian', r.nameCombined]] : [])
+        .map(([l,v])=>`<tr><td style="padding:6px 10px;color:#5b6475;font-weight:600;vertical-align:top;width:42%;">${escapeHtml(l)}</td><td style="padding:6px 10px;white-space:normal;">${v===''||v==null?'<span style="color:#9aa2b1;">—</span>':escapeHtml(String(v))}</td></tr>`).join('');
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px;';
+      ov.innerHTML = `<div style="background:#fff;color:#111827;border-radius:12px;max-width:640px;width:100%;padding:16px;box-sizing:border-box;">
+        <div style="font-size:16px;font-weight:700;margin-bottom:10px;">👁 ${isMdrM?'MDR':'CDR'} record</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;"><tbody>${rowsH}</tbody></table>
+        <div style="display:flex;gap:8px;margin-top:14px;"><button type="button" class="dl-tab mp-v-edit" style="background:#1d6fb8;color:#fff;border-color:#1d6fb8;">✏ Edit</button><button type="button" class="dl-tab mp-v-close" style="color:#111827;">Close</button></div></div>`;
+      document.body.appendChild(ov);
+      const close = ()=>ov.remove();
+      ov.querySelector('.mp-v-close').onclick = close;
+      ov.querySelector('.mp-v-edit').onclick = ()=>{ close(); editRecord(i); };
+      ov.addEventListener('mousedown', e=>{ if(e.target===ov) close(); });
     }
     function editRecord(i){
       const r = recs()[i]; if(!r) return;
