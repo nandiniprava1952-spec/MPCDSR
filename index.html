@@ -174,6 +174,7 @@ header{position:relative;}
 #mplockbar .lk-view{min-width:0;text-align:right;line-height:1.3;}
 #mplockbar b{color:#60a5fa;overflow-wrap:anywhere;}
 #mplockbar button{flex:0 0 auto;background:#171a21;border:1px solid #3a4260;color:#e8eaf0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;}
+#mplockbar .lk-fac{padding:6px 10px;font-size:11.5px;}
 #mplockbar .lk-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;color:#f87171;}
 #mplockbar button:active{background:#2563eb;border-color:#2563eb;}
 header h1{padding-right:0;}
@@ -183,7 +184,6 @@ header.has-lock h1{margin-top:34px;}
 .cloud-row button:first-child{background:var(--accent);border-color:var(--accent);color:#fff;}
 .cloud-row button:active{opacity:.8;}
 .cloud-row .cloud-status{font-size:12px;color:var(--muted);flex:1 1 100%;overflow-wrap:anywhere;}
-.cloud-row .logout-btn{background:transparent;border-color:#3a4260;}
 .cloud-row .cloud-status:empty{display:none;}
 </style>
 <style id="mp-mobile-css">
@@ -215,9 +215,8 @@ header.has-lock h1{margin-top:34px;}
     header.has-lock h1{margin-top:40px;}
     .cloud-row:not([style*="none"]){display:grid !important;grid-template-columns:1fr 1fr;gap:8px;padding:8px;}
     .cloud-row button{width:100%;min-height:46px;font-size:13px;padding:8px 6px;}
-    .cloud-row #cdr-cloud-delete,.cloud-row #mdr-cloud-delete{grid-column:1 / -1;}
-    .cloud-row .logout-btn{grid-column:1 / -1;margin-left:0 !important;}
-    .cloud-row .cloud-status{grid-column:1 / -1;}
+    .cloud-row #cdr-cloud-delete,.cloud-row #mdr-cloud-delete,.cloud-row #cdr-cloud-records,.cloud-row #mdr-cloud-records{grid-column:1 / -1;}
+        .cloud-row .cloud-status{grid-column:1 / -1;}
     .tabs{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0;margin-bottom:12px;}
     .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
     .card-fs-btn{width:36px;height:36px;}
@@ -231,12 +230,12 @@ header.has-lock h1{margin-top:34px;}
 </style>
 </head>
 <body>
-<div id="mpg"><div class="box"><h2>MPCDSR Dashboard</h2><p>Select your district (and your block, if you have a block login) and enter your passcode. You will only see your own district's or block's records.</p>
+<div id="mpg"><div class="box"><h2>MPCDSR Dashboard</h2><p>Select your district (and your block or SNCU/NBSU, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
 <select id="mpgDist"></select>
 <select id="mpgBlock" style="display:none"></select>
-<div style="position:relative;"><input id="mpgPass" type="password" placeholder="Passcode" autocomplete="off" style="padding-right:64px;"><button type="button" id="mpgEye" aria-label="Show passcode" aria-pressed="false" style="position:absolute;right:6px;top:6px;width:auto;padding:5px 10px;background:transparent;color:#9aa2b1;font-size:12px;font-weight:600;">Show</button></div><div class="err" id="mpgErr"></div><button type="button" id="mpgBtn">Open dashboard</button><p style="margin:12px 0 0;text-align:center;font-size:12.5px;"><a href="#" id="mpgOffline" style="color:#60a5fa;text-decoration:underline;">Use offline (no cloud)</a></p></div></div>
+<div style="position:relative;"><input id="mpgPass" type="password" placeholder="Passcode" autocomplete="off" style="padding-right:64px;"><button type="button" id="mpgEye" aria-label="Show passcode" aria-pressed="false" style="position:absolute;right:6px;top:6px;width:auto;padding:5px 10px;background:transparent;color:#9aa2b1;font-size:12px;font-weight:600;">Show</button></div><div class="err" id="mpgErr"></div><button type="button" id="mpgBtn">Open dashboard</button><p style="margin:12px 0 0;text-align:center;font-size:12.5px;"><a href="#" id="mpgOffline" style="color:#60a5fa;text-decoration:underline;">Use offline (no cloud)</a></p><p style="margin:8px 0 0;text-align:center;font-size:12.5px;"><a href="#" id="mpgFacLoad" style="color:#60a5fa;text-decoration:underline;">Load SNCU/NBSU logins file</a><input type="file" id="mpgFacFile" accept=".json,application/json" style="display:none"></p></div></div>
 <header>
-  <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-text" onclick="mpDistrictLogout()">Log out</button><button type="button" class="lk-icon" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
+  <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-fac" id="mpFacMgr" style="display:none" onclick="mpOpenFacilityManager()" title="Create SNCU/NBSU logins for this district">🏥 SNCU/NBSU logins</button><button type="button" class="lk-text" onclick="mpDistrictLogout()">Log out</button><button type="button" class="lk-icon" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
   <h1 style="color: orange;">Maternal & Child Death Review — Dashboard</h1>
   <p>Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.</p>
 </header>
@@ -651,7 +650,7 @@ const DISTRICT_ALIASES = {
   'BARAGARH':'BARGARH', 'ANGUL':'ANUGUL', 'DEOGARH':'DEBAGARH',
   'JAGATSINGHPUR':'JAGATSINGHAPUR', 'JAJPUR':'JAJAPUR', 'KEONJHAR':'KENDUJHAR',
   'KHURDA':'KHORDHA', 'MALKANAGIRI':'MALKANGIRI', 'NAWARANGPUR':'NABARANGAPUR',
-  'RAYAGARA':'RAYAGADA', 'SONEPUR':'SONAPUR',
+  'RAYAGARA':'RAYAGADA', 'SONEPUR':'SONAPUR', 'SUBARNAPUR':'SONAPUR',
   'NABARANGPUR':'NABARANGAPUR', 'BOLANGIR':'BALANGIR'
 };
 function normalizeDistrict(name){
@@ -706,6 +705,7 @@ function recordsTableHtml(recs, limit, showMdrCols){
     <td>${escapeHtml(r.district||'')}</td>
     <td>${escapeHtml(r.block||'')}</td>
     ${showMdrCols?(hasCombinedName?`<td style="white-space:normal;max-width:260px;">${escapeHtml(r.nameCombined||'')}</td>`:`<td>${escapeHtml(r.deceasedName||'')}</td><td style="white-space:normal;max-width:260px;">${escapeHtml(r.husbandGuardian||'')}</td>`):''}
+    ${showMdrCols?`<td>${escapeHtml(r.age||'')}</td>`:''}
     <td>${escapeHtml(r.date||'')}</td>
     <td>${escapeHtml(PLACE_LABELS[r.place]||r.place||'')}</td>
     <td>${escapeHtml(PERIOD_LABELS[r.period]||r.period||'')}</td>
@@ -726,6 +726,7 @@ function recordsTableHtml(recs, limit, showMdrCols){
           <th style="text-align:left;padding:6px 8px;">District</th>
           <th style="text-align:left;padding:6px 8px;">Block</th>
           ${showMdrCols?(hasCombinedName?`<th style="text-align:left;padding:6px 8px;">Name of the Deceased Mother / Name &amp; address of the Husband / Guardian</th>`:`<th style="text-align:left;padding:6px 8px;">Name of the Deceased Mother</th><th style="text-align:left;padding:6px 8px;">Name &amp; address of the Husband / Guardian</th>`):''}
+          ${showMdrCols?`<th style="text-align:left;padding:6px 8px;">Age</th>`:''}
           <th style="text-align:left;padding:6px 8px;">Date of death</th>
           <th style="text-align:left;padding:6px 8px;">Place</th>
           <th style="text-align:left;padding:6px 8px;">Death period</th>
@@ -760,6 +761,7 @@ function cdrRecordsTableHtml(recs, limit){
     <td>${escapeHtml(r.caste||'')}</td>
     <td>${escapeHtml(r.place||'')}</td>
     <td>${escapeHtml(r.facilityName||'')}</td>
+    <td>${escapeHtml(r.dob||'')}</td>
     <td>${escapeHtml(r.age||'')}</td>
     <td>${escapeHtml(r.ageCategory||'')}</td>
     <td>${escapeHtml(r.birthWeight||'')}</td>
@@ -780,6 +782,7 @@ function cdrRecordsTableHtml(recs, limit){
           <th style="text-align:left;padding:6px 8px;">Caste</th>
           <th style="text-align:left;padding:6px 8px;">Place of death</th>
           <th style="text-align:left;padding:6px 8px;">Name of facility</th>
+          <th style="text-align:left;padding:6px 8px;">Date of birth</th>
           <th style="text-align:left;padding:6px 8px;">Age</th>
           <th style="text-align:left;padding:6px 8px;">Age category</th>
           <th style="text-align:left;padding:6px 8px;">Birth weight (Kg)</th>
@@ -1966,6 +1969,7 @@ const MDR_RECORD_EXPORT_COLS = [
   ['Sub Centre',                          r=>r.subCentre||''],
   ['Name of the Deceased Mother',         r=>r.nameCombined ? r.nameCombined : (r.deceasedName||'')],
   ['Name & address of the Husband / Guardian', r=>r.nameCombined ? '' : (r.husbandGuardian||'')],
+  ['Age (years)',                         r=>exportNumOrText(r.age)],
   ['Reporting month',                     r=>r.month||''],
   ['Reporting year',                      r=>exportNumOrText(r.year)],
   ['Date of death',                       r=>r.date||''],
@@ -1993,6 +1997,7 @@ const CDR_RECORD_EXPORT_COLS = [
   ['Caste',                               r=>r.caste||''],
   ['Place of death',                      r=>r.place||''],
   ['Name of facility',                    r=>r.facilityName||''],
+  ['Date of birth',                       r=>r.dob||''],
   ['Age',                                 r=>exportNumOrText(r.age)],
   ['Age category',                        r=>r.ageCategory||''],
   ['Birth weight (Kg)',                   r=>exportNumOrText(r.birthWeight)],
@@ -2145,6 +2150,34 @@ function mpBlockFindEntry(code, block){
   const f = mpBlockStoreGet()[code]; if(!f || !Array.isArray(f.blocks)) return null;
   return f.blocks.find(b=>normalizeBlock(b.block)===normalizeBlock(block)) || null;
 }
+
+// ---- SNCU / NBSU facility logins: a facility officer sees and enters CDR records for ONE SNCU/NBSU of a district.
+// Same mechanism as block logins: the district login creates a passcode per facility (encrypting the district cloud passcode
+// under it) and downloads a logins file; facility users load that file once on the login screen.
+const FACILITY_LIST = [["SNCU","Angul","SNCU DHH Anugola","DHH"],["SNCU","Balasore","SNCU DHH Baleshwar","DHH"],["SNCU","Bargarh","SNCU DHH Baragada","DHH"],["SNCU","Bhadrak","SNCU DHH Bhadrak","DHH"],["SNCU","Balangir","SNCU DHH Balangir","DHH"],["SNCU","Balangir","SNCU SDH Patnagarh","SDH"],["SNCU","Boudh","SNCU DHH Boudh","DHH"],["SNCU","Cuttack","SNCU SCB MC&H Kataka","MCH"],["SNCU","Cuttack","SNCU SVPPGIP Kataka","MCH"],["SNCU","Cuttack","SNCU SDH Athagada","SDH"],["SNCU","Deogarh","SNCU DHH Debagada","DHH"],["SNCU","Dhenkanal","SNCU DHH Dhenkanal","DHH"],["SNCU","Gajapati","SNCU DHH Gajapati","DHH"],["SNCU","Ganjam","SNCU MKCG MC&H Brahmapur","MCH"],["SNCU","Ganjam","SNCU SDH Bhanjanagar","SDH"],["SNCU","Ganjam","SNCU City Hospital, Brahmapur","DHH"],["SNCU","Jagatsinghpur","SNCU DHH Jagatsinghpur","DHH"],["SNCU","Jajpur","SNCU DHH Jajpur","DHH"],["SNCU","Jharsuguda","SNCU DHH Jharsuguda","DHH"],["SNCU","Kalahandi","SNCU DHH Kalahandi","DHH"],["SNCU","Kandhamal","SNCU DHH Kandhamala","DHH"],["SNCU","Kandhamal","SNCU SDH Balliguda","SDH"],["SNCU","Kendrapara","SNCU DHH Kendrapada","DHH"],["SNCU","Keonjhar","SNCU DHH Kendujhar","DHH"],["SNCU","Keonjhar","SNCU SDH Anandapur","SDH"],["SNCU","Khordha","SNCU DHH Capital Hospital Bhubaneswar","DHH"],["SNCU","Khordha","SNCU DHH Khordha","DHH"],["SNCU","Koraput","SNCU SLNMCH Koraput","MCH"],["SNCU","Koraput","SNCU DHH Koraput (Jeypore)","DHH"],["SNCU","Malkangiri","SNCU DHH Malkangiri","DHH"],["SNCU","Mayurbhanj","SNCU DHH Mayurbhanj","DHH"],["SNCU","Mayurbhanj","SNCU SDH Karanjia","SDH"],["SNCU","Mayurbhanj","SNCU SDH Rairangpur","SDH"],["SNCU","Mayurbhanj","SNCU SDH Udala","SDH"],["SNCU","Nabarangpur","SNCU DHH Nabarangpur","DHH"],["SNCU","Nabarangpur","SNCU SDH Umarkot","SDH"],["SNCU","Nayagarh","SNCU DHH Nayagada","DHH"],["SNCU","Nuapada","SNCU DHH Nuapada","DHH"],["SNCU","Puri","SNCU DHH Puri","DHH"],["SNCU","Rayagada","SNCU DHH Rayagada","DHH"],["SNCU","Sambalpur","SNCU DHH Sambalpur","DHH"],["SNCU","Sambalpur","SNCU VSS MC&H Burla","MCH"],["SNCU","Subarnapur","SNCU DHH Sonpur","DHH"],["SNCU","Sundargarh","SNCU DHH RGH Raurkela","DHH"],["SNCU","Sundargarh","SNCU DHH Sundargada","DHH"],["NBSU","Angul","SDH Talacher","SDH"],["NBSU","Angul","SDH Palalahada","SDH"],["NBSU","Angul","CHC Khamar","CHC"],["NBSU","Balasore","SDH Nilagiri","SDH"],["NBSU","Balasore","CHC Sora","CHC"],["NBSU","Balasore","CHC Basta","CHC"],["NBSU","Balasore","CHC GK Bhattar","CHC"],["NBSU","Balasore","CHC Jaleswarpur","CHC"],["NBSU","Bargarh","SDH Padampur","SDH"],["NBSU","Bargarh","CHC Sohela","CHC"],["NBSU","Bargarh","CHC Barpali","CHC"],["NBSU","Bhadrak","CHC Dhamnagar","CHC"],["NBSU","Bhadrak","CHC Basudevpur","CHC"],["NBSU","Bhadrak","CHC Agarpada","CHC"],["NBSU","Balangir","SDH Titlagarh","SDH"],["NBSU","Balangir","CHC Kantabanjhi","CHC"],["NBSU","Balangir","CHC Belapara","CHC"],["NBSU","Boudh","CHC Kantamal","CHC"],["NBSU","Cuttack","SDH Banki","SDH"],["NBSU","Cuttack","DHH City Hospital, Kataka","DHH"],["NBSU","Dhenkanal","SDH Hindol","SDH"],["NBSU","Dhenkanal","SDH Kamakshyanagar","SDH"],["NBSU","Ganjam","SDH Asika","SDH"],["NBSU","Ganjam","CHC Khalikote","CHC"],["NBSU","Ganjam","CHC Kodala","CHC"],["NBSU","Ganjam","CHC Polosara","CHC"],["NBSU","Ganjam","SDH Chhatrapur","SDH"],["NBSU","Ganjam","SDH Hinjilikatu","SDH"],["NBSU","Ganjam","CHC Sorada","CHC"],["NBSU","Ganjam","CHC Adapada","CHC"],["NBSU","Jagatsinghpur","CHC Ersama","CHC"],["NBSU","Jajpur","CHC Barchana","CHC"],["NBSU","Jajpur","CHC Danagadi","CHC"],["NBSU","Jajpur","CHC Jajpur Road","CHC"],["NBSU","Jajpur","CHC Dharmashala","CHC"],["NBSU","Jharsuguda","CHC Lakhanpur","CHC"],["NBSU","Kalahandi","SDH Dharmagada","SDH"],["NBSU","Kalahandi","CHC Junagada","CHC"],["NBSU","Kalahandi","CHC Kesinga","CHC"],["NBSU","Kandhamal","CHC G. Udayagiri","CHC"],["NBSU","Kendrapara","SDH Pattamundai","SDH"],["NBSU","Kendrapara","CHC Patkura","CHC"],["NBSU","Keonjhar","SDH Champua","SDH"],["NBSU","Keonjhar","CHC Ghatgaon","CHC"],["NBSU","Khordha","CHC Banapur","CHC"],["NBSU","Khordha","CHC Tangi","CHC"],["NBSU","Khordha","CHC Jatani","CHC"],["NBSU","Koraput","CHC Laxmipur","CHC"],["NBSU","Koraput","CHC Nandapur","CHC"],["NBSU","Koraput","CHC Baipariguda","CHC"],["NBSU","Koraput","CHC Boriguma","CHC"],["NBSU","Koraput","CHC Kotpad","CHC"],["NBSU","Malkangiri","SDH Mathili","SDH"],["NBSU","Malkangiri","SDH Chitrakonda","SDH"],["NBSU","Malkangiri","CHC Kalimela","CHC"],["NBSU","Mayurbhanj","CHC Badasahi","CHC"],["NBSU","Mayurbhanj","CHC Betanati","CHC"],["NBSU","Mayurbhanj","CHC Jashipur","CHC"],["NBSU","Mayurbhanj","CHC Thakurmunda","CHC"],["NBSU","Nabarangpur","CHC Papadahandi","CHC"],["NBSU","Nayagarh","CHC Dashapalla","CHC"],["NBSU","Nuapada","SDH Khadial","SDH"],["NBSU","Puri","CHC Sakhigopal","CHC"],["NBSU","Puri","CHC Nimapada","CHC"],["NBSU","Puri","CHC Charichhak","CHC"],["NBSU","Rayagada","SDH Gunupur","SDH"],["NBSU","Rayagada","CHC Muniguda","CHC"],["NBSU","Sambalpur","SDH Kuchinda","SDH"],["NBSU","Sambalpur","SDH Redhakhol","SDH"],["NBSU","Subarnapur","CHC Dunguripali","CHC"],["NBSU","Sundargarh","SDH Banaigada","SDH"],["NBSU","Sundargarh","CHC Rajgangpur","CHC"]];   // [type, district, facility name, category]
+let FACILITY_LOCK = null;   // {kind:'SNCU'|'NBSU', name} when a facility login is active
+const FAC_STORE_KEY = 'mp_facility_logins';
+function mpFacStoreGet(){ try{ return JSON.parse(localStorage.getItem(FAC_STORE_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function mpFacStoreSet(o){ try{ localStorage.setItem(FAC_STORE_KEY, JSON.stringify(o)); return true; }catch(e){ return false; } }
+function mpFacFindEntry(code, kind, name){
+  const f = mpFacStoreGet()[code]; if(!f || !Array.isArray(f.entries)) return null;
+  return f.entries.find(e=>e.kind===kind && normalizeBlock(e.name)===normalizeBlock(name)) || null;
+}
+function facilitiesFor(code){
+  return FACILITY_LIST.filter(x=>DISTRICT_NAME_TO_CODE[normalizeDistrict(x[1])]===code).map(x=>({kind:x[0], name:x[2], category:x[3]}));
+}
+const _FAC_GENERIC = new Set(['sncu','nbsu','dhh','sdh','chc','mch','mc','h','hospital','city','district','headquarters','hq','medical','college','the']);
+function _facKey(s){
+  const t = String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]+/g,' ').split(' ').filter(w=>w && !_FAC_GENERIC.has(w)).join('');
+  return t || normalizeBlock(s);
+}
+function facSame(a,b){ const x=_facKey(a), y=_facKey(b); return !!x && !!y && (x===y || blockSame(x,y)); }
+// Is this record inside the logged-in block / facility? (no block or facility login = everything)
+function mpInScope(r){
+  if(BLOCK_LOCK) return blockSame(r.block, BLOCK_LOCK.name);
+  if(FACILITY_LOCK) return facSame(r.facilityName, FACILITY_LOCK.name);
+  return true;
+}
 let CLOUD_AUTH = null;
 function sha256(str){
   const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
@@ -2168,6 +2201,10 @@ function districtLockRecords(records){
   if(!DISTRICT_LOCK || !records) return records;
   const want = normalizeDistrict(DISTRICT_LOCK.name);
   let out = records.filter(r=>normalizeDistrict(r.district)===want);
+  if(FACILITY_LOCK){
+    out = out.filter(r=>facSame(r.facilityName, FACILITY_LOCK.name));
+    return out;   // a brand-new facility legitimately has no records yet
+  }
   if(BLOCK_LOCK){
     out = out.filter(r=>blockSame(r.block, BLOCK_LOCK.name));
     if(!out.length && records.length) alert('No records for '+BLOCK_LOCK.name+' block ('+DISTRICT_LOCK.name+') were found. Only this block\'s records can be viewed with this login.');
@@ -2237,6 +2274,68 @@ function mpOpenBlockManager(){
   };
 }
 window.mpOpenBlockManager = mpOpenBlockManager;
+
+// ---- SNCU/NBSU logins manager: a DISTRICT login creates the facility passcodes + the logins file.
+function mpOpenFacilityManager(){
+  if(!DISTRICT_LOCK || BLOCK_LOCK || FACILITY_LOCK || !CLOUD_AUTH || !CLOUD_AUTH.pass || CLOUD_AUTH.district==='ADMIN'){ alert('SNCU/NBSU logins are created from a DISTRICT login (the district passcode is needed to open the cloud for facility users).'); return; }
+  if(!(window.crypto && crypto.subtle)){ alert('Encryption is not available in this browser window. Use Chrome or Edge.'); return; }
+  const code = DISTRICT_LOCK.code, dname = DISTRICT_LOCK.name;
+  const have = (mpFacStoreGet()[code]||{}).entries || [];
+  const rows = facilitiesFor(code).map(f=>({kind:f.kind, name:f.name, category:f.category, pass:'', exists: have.some(e=>e.kind===f.kind && normalizeBlock(e.name)===normalizeBlock(f.name))}));
+  const ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const rnd = ()=>{ const u=crypto.getRandomValues(new Uint8Array(8)); return Array.from(u,x=>ALPHA[x%ALPHA.length]).join(''); };
+  const esc = x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-family:Segoe UI,Arial,sans-serif;';
+  ov.innerHTML = `<div style="background:#fff;color:#222;border-radius:12px;width:min(700px,94vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+    <div style="padding:14px 18px;border-bottom:1px solid #e3e6ea;display:flex;align-items:center;justify-content:space-between;"><b style="font-size:16px;">🏥 SNCU / NBSU logins — ${esc(dname)} district</b><button type="button" id="mpfmClose" style="border:0;background:none;font-size:20px;cursor:pointer;">✕</button></div>
+    <div style="padding:12px 18px;overflow:auto;">
+      <div style="font-size:12.5px;color:#555;margin-bottom:10px;">Each SNCU / NBSU gets its own passcode (6+ characters) and sees only its own CDR records. Give each facility <b>only its own passcode</b> plus the downloaded <b>logins file</b> (they load it once on the login screen). Leave a passcode empty to skip that facility; a facility marked <i>login exists</i> keeps its old passcode unless you enter a new one.</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;"><button type="button" id="mpfmGenAll" style="padding:7px 12px;">🎲 Generate for all without a login</button></div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;" id="mpfmTbl"></table>
+      <div id="mpfmMsg" style="margin-top:10px;font-size:12.5px;min-height:16px;"></div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid #e3e6ea;display:flex;gap:8px;flex-wrap:wrap;"><button type="button" id="mpfmMake" style="background:#1d6fb8;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-weight:600;cursor:pointer;">⬇ Create logins file + passcode list</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const $ = id=>ov.querySelector('#'+id);
+  const msg = (t,err)=>{ $('mpfmMsg').textContent=t; $('mpfmMsg').style.color = err?'#c0392b':'#1e7e34'; };
+  function draw(){
+    $('mpfmTbl').innerHTML = '<tr style="text-align:left;color:#666;"><th style="padding:4px 6px;">Type</th><th style="padding:4px 6px;">Facility</th><th style="padding:4px 6px;">Passcode</th><th></th></tr>' +
+      (rows.length ? rows.map((r,i)=>`<tr><td style="padding:4px 6px;">${esc(r.kind)}</td><td style="padding:4px 6px;">${esc(r.name)}${r.exists?' <span style="color:#1e7e34;font-size:11.5px;">(login exists)</span>':''}</td><td style="padding:4px 6px;"><input data-i="${i}" value="${esc(r.pass)}" placeholder="(none)" style="width:140px;padding:5px 7px;border:1px solid #ccd;border-radius:6px;font-family:monospace;text-transform:uppercase;"></td><td><button type="button" data-g="${i}" title="Random passcode">🎲</button></td></tr>`).join('')
+        : '<tr><td colspan="4" style="padding:10px 6px;color:#888;">No SNCU/NBSU is listed for this district.</td></tr>');
+    $('mpfmTbl').querySelectorAll('input[data-i]').forEach(inp=>inp.oninput=()=>{ rows[+inp.dataset.i].pass = inp.value.trim().toUpperCase(); });
+    $('mpfmTbl').querySelectorAll('button[data-g]').forEach(b=>b.onclick=()=>{ rows[+b.dataset.g].pass = rnd(); draw(); });
+  }
+  draw();
+  $('mpfmClose').onclick = ()=>ov.remove();
+  $('mpfmGenAll').onclick = ()=>{ rows.forEach(r=>{ if(!r.pass && !r.exists) r.pass = rnd(); }); draw(); };
+  const dl = (name, text, type)=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); };
+  $('mpfmMake').onclick = async ()=>{
+    const todo = rows.filter(r=>r.pass);
+    if(!todo.length){ msg('Enter or generate at least one facility passcode.', true); return; }
+    const bad = todo.filter(r=>r.pass.length<6); if(bad.length){ msg('Passcodes need 6+ characters: '+bad.map(b=>b.name).join(', '), true); return; }
+    if(new Set(todo.map(r=>r.pass)).size!==todo.length){ msg('Each facility needs a different passcode.', true); return; }
+    $('mpfmMake').disabled = true; msg('Creating…');
+    try{
+      const fresh = [];
+      for(const r of todo){ const e = await mpBlockMakeEntry(r.name, r.pass, CLOUD_AUTH.pass); fresh.push({kind:r.kind, name:r.name, salt:e.salt, h:e.h, iv:e.iv, ct:e.ct}); }
+      const st = mpFacStoreGet();
+      const keep = (((st[code]||{}).entries)||[]).filter(o=>!fresh.some(f=>f.kind===o.kind && normalizeBlock(f.name)===normalizeBlock(o.name)));
+      const entries = keep.concat(fresh);
+      st[code] = {entries}; mpFacStoreSet(st);
+      const file = {type:'mpcdsr-facility-logins', version:1, districtCode:code, districtName:dname, createdAt:new Date().toISOString(), entries};
+      const day = new Date().toISOString().slice(0,10);
+      dl('MPCDSR_facility_logins_'+dname+'_'+day+'.json', JSON.stringify(file), 'application/json');
+      const q = x=>'"'+String(x).replace(/"/g,'""')+'"';
+      dl('MPCDSR_facility_passcodes_'+dname+'_'+day+'.csv', '\ufeffDistrict,Type,Facility,Passcode\r\n'+todo.map(r=>[q(dname),q(r.kind),q(r.name),q(r.pass)].join(',')).join('\r\n'), 'text/csv');
+      msg('Created '+fresh.length+' facility login(s). Keep the passcode list private and share each passcode only with its facility.');
+      rows.forEach(r=>{ if(r.pass){ r.exists = true; r.pass = ''; } }); draw();
+    }catch(e){ msg('Failed: '+e.message, true); }
+    finally{ $('mpfmMake').disabled = false; }
+  };
+}
+window.mpOpenFacilityManager = mpOpenFacilityManager;
 function mpDistrictLogout(){ try{ sessionStorage.removeItem('mp_district_auth'); }catch(e){} location.reload(); }
 // ---- Cloud speed-ups: (1) several requests in flight at once, (2) per-district cache in this browser ----
 const CLOUD_MAX_PARALLEL = 6;          // simultaneous requests to the Apps Script (it copes with a handful)
@@ -2352,25 +2451,35 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   function startApp(){
     document.getElementById('mpg').style.display='none';
     document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
-    document.getElementById('mplockName').textContent = BLOCK_LOCK ? (BLOCK_LOCK.name+' block, '+DISTRICT_LOCK.name+' district') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'All districts (State)');
+    document.getElementById('mplockName').textContent = FACILITY_LOCK ? (FACILITY_LOCK.name+' ('+FACILITY_LOCK.kind+'), '+DISTRICT_LOCK.name+' district') : (BLOCK_LOCK ? (BLOCK_LOCK.name+' block, '+DISTRICT_LOCK.name+' district') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'All districts (State)'));
+    { const fm = document.getElementById('mpFacMgr'); if(fm) fm.style.display = (DISTRICT_LOCK && !BLOCK_LOCK && !FACILITY_LOCK && CLOUD_AUTH && CLOUD_AUTH.district!=='ADMIN') ? '' : 'none'; }
+    if(FACILITY_LOCK){   // SNCU/NBSU logins work on child deaths (CDR) only
+      const mt = document.querySelector('.tab-btn[data-tab="mdr"]'); if(mt) mt.style.display='none';
+      const ct = document.querySelector('.tab-btn[data-tab="cdr"]'); if(ct) ct.click();
+    }
     // A district login (not state, not block) can create block logins.
-    // Block logins are view-only: saving/deleting would overwrite the whole district's records for a period.
-    document.querySelectorAll('[id$="-cloud-save"],[id$="-cloud-delete"]').forEach(b=>{ b.style.display = BLOCK_LOCK ? 'none' : ''; });
+    // Block logins can save (merged into the district's records, touching only their own block); deleting stays district/admin only.
+    document.querySelectorAll('[id$="-cloud-save"]').forEach(b=>{ b.style.display = ''; });
+    document.querySelectorAll('[id$="-cloud-delete"]').forEach(b=>{ b.style.display = (BLOCK_LOCK||FACILITY_LOCK) ? 'none' : ''; });
     document.querySelectorAll('.cloud-row').forEach(el=>{ el.style.display='flex'; });
     document.dispatchEvent(new CustomEvent('mp-auth-ready'));
   }
   function tryLogin(){
     const c = sel.value, p = document.getElementById('mpgPass').value.trim().toUpperCase();
-    const err = document.getElementById('mpgErr');
+    const err = document.getElementById('mpgErr'); err.style.color='';
     if(!c){ err.textContent='Please select your district.'; return; }
-    if(c!=='ADMIN' && blockSel.style.display!=='none' && blockSel.value){ tryBlockLogin(c, blockSel.value, p); return; }
+    if(c!=='ADMIN' && blockSel.style.display!=='none' && blockSel.value){
+      const bv = blockSel.value;
+      if(bv.startsWith('f:')){ const k = bv.slice(2), i = k.indexOf('|'); tryFacilityLogin(c, k.slice(0,i), k.slice(i+1), p); return; }
+      tryBlockLogin(c, bv.replace(/^b:/,''), p); return;
+    }
     const hash = sha256(p);
     if(c==='ADMIN'){
       if(hash!==ADMIN_HASH){ err.textContent='Incorrect passcode.'; return; }
-      DISTRICT_LOCK=null; BLOCK_LOCK=null; CLOUD_AUTH={district:'ADMIN',pass:p};
+      DISTRICT_LOCK=null; BLOCK_LOCK=null; FACILITY_LOCK=null; CLOUD_AUTH={district:'ADMIN',pass:p};
     } else {
       if(hash!==DISTRICT_ACCESS[c].h){ err.textContent='Incorrect passcode.'; return; }
-      DISTRICT_LOCK={code:c,name:DISTRICT_ACCESS[c].name}; BLOCK_LOCK=null; CLOUD_AUTH={district:c,pass:p};
+      DISTRICT_LOCK={code:c,name:DISTRICT_ACCESS[c].name}; BLOCK_LOCK=null; FACILITY_LOCK=null; CLOUD_AUTH={district:c,pass:p};
     }
     try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c,h:hash,p})); }catch(e){}
     startApp();
@@ -2386,8 +2495,9 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   }
   function fillBlockSel(){
     const c = sel.value, list = (c && c!=='ADMIN') ? blocksFor(c) : [];
-    if(!list.length){ blockSel.style.display='none'; blockSel.innerHTML=''; return; }
-    blockSel.innerHTML = '<option value="">District login (all blocks)</option>' + list.map(n=>'<option value="'+escH(n)+'">Block: '+escH(n)+'</option>').join('');
+    const facs = (c && c!=='ADMIN') ? (((mpFacStoreGet()[c]||{}).entries)||[]).slice().sort((x,y)=>(x.kind+x.name).localeCompare(y.kind+y.name)) : [];
+    if(!list.length && !facs.length){ blockSel.style.display='none'; blockSel.innerHTML=''; return; }
+    blockSel.innerHTML = '<option value="">District login (all blocks)</option>' + list.map(n=>'<option value="b:'+escH(n)+'">Block: '+escH(n)+'</option>').join('') + facs.map(f=>'<option value="f:'+escH(f.kind)+'|'+escH(f.name)+'">'+escH(f.kind)+': '+escH(f.name)+'</option>').join('');
     blockSel.style.display = '';
   }
   sel.addEventListener('change', fillBlockSel);
@@ -2405,6 +2515,45 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c:code, b:entry.block, bh:entry.h, p:dpass})); }catch(_){}
     err.textContent=''; startApp();
   }
+  async function tryFacilityLogin(code, kind, name, p){
+    const err = document.getElementById('mpgErr');
+    if(!p){ err.textContent='Enter your facility passcode.'; return; }
+    const entry = mpFacFindEntry(code, kind, name);
+    if(!entry){ err.textContent='Facility login not found. Load the SNCU/NBSU logins file first.'; return; }
+    err.textContent = 'Checking…';
+    let dpass;
+    try{ dpass = await mpBlockOpenEntry(entry, p); }catch(e){ err.textContent = e.message; return; }
+    if(!dpass){ err.textContent='Incorrect passcode.'; return; }
+    DISTRICT_LOCK = {code, name:DISTRICT_ACCESS[code].name}; BLOCK_LOCK = null; FACILITY_LOCK = {kind:entry.kind, name:entry.name};
+    CLOUD_AUTH = {district:code, pass:dpass};
+    try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c:code, f:{k:entry.kind, n:entry.name, h:entry.h}, p:dpass})); }catch(_){}
+    err.textContent=''; startApp();
+  }
+  // Load the logins file a district created (replaces entries of the same facility).
+  (function(){
+    const a = document.getElementById('mpgFacLoad'), f = document.getElementById('mpgFacFile'), err = document.getElementById('mpgErr');
+    if(!a || !f) return;
+    a.onclick = e=>{ e.preventDefault(); f.click(); };
+    f.onchange = ()=>{
+      const file = f.files && f.files[0]; if(!file) return;
+      const rd = new FileReader();
+      rd.onload = ()=>{
+        try{
+          const j = JSON.parse(rd.result);
+          if(!j || j.type!=='mpcdsr-facility-logins' || !DISTRICT_ACCESS[j.districtCode] || !Array.isArray(j.entries)) throw new Error('bad');
+          const clean = j.entries.filter(e=>e && (e.kind==='SNCU'||e.kind==='NBSU') && e.name && e.salt && e.h && e.iv && e.ct);
+          const st = mpFacStoreGet(), cur = ((st[j.districtCode]||{}).entries)||[];
+          const keep = cur.filter(o=>!clean.some(n=>n.kind===o.kind && normalizeBlock(n.name)===normalizeBlock(o.name)));
+          st[j.districtCode] = {entries: keep.concat(clean)};
+          if(!mpFacStoreSet(st)) throw new Error('store');
+          sel.value = j.districtCode; fillBlockSel();
+          err.style.color = '#1e7e34'; err.textContent = 'Loaded '+clean.length+' SNCU/NBSU login(s) for '+DISTRICT_ACCESS[j.districtCode].name+'. Choose your facility and enter your passcode.';
+        }catch(x){ err.style.color=''; err.textContent = 'This is not a valid SNCU/NBSU logins file.'; }
+        f.value = '';
+      };
+      rd.readAsText(file);
+    };
+  })();
   window.mpBlockLogin = async function(code, block, pass){   // also used for testing
     const entry = mpBlockFindEntry(code, block); if(!entry) return false;
     const dpass = await mpBlockOpenEntry(entry, pass); if(!dpass) return false;
@@ -2415,7 +2564,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   // Offline mode: skip login and cloud entirely; only files loaded from this device are shown, nothing is uploaded.
   document.getElementById('mpgOffline').onclick = function(e){
     e.preventDefault();
-    DISTRICT_LOCK=null; BLOCK_LOCK=null; CLOUD_AUTH=null;
+    DISTRICT_LOCK=null; BLOCK_LOCK=null; FACILITY_LOCK=null; CLOUD_AUTH=null;
     try{ sessionStorage.removeItem('mp_district_auth'); }catch(_){}
     document.getElementById('mpg').style.display='none';
     document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
@@ -2436,7 +2585,10 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   document.getElementById('mpgPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   try{
     const saved = JSON.parse(sessionStorage.getItem('mp_district_auth')||'null');
-    if(saved && saved.b){
+    if(saved && saved.f){
+      const en = mpFacFindEntry(saved.c, saved.f.k, saved.f.n);
+      if(en && DISTRICT_ACCESS[saved.c] && en.h===saved.f.h && saved.p){ DISTRICT_LOCK={code:saved.c,name:DISTRICT_ACCESS[saved.c].name}; BLOCK_LOCK=null; FACILITY_LOCK={kind:en.kind,name:en.name}; CLOUD_AUTH={district:saved.c,pass:saved.p}; startApp(); return; }
+    } else if(saved && saved.b){
       const en = mpBlockFindEntry(saved.c, saved.b);
       if(en && DISTRICT_ACCESS[saved.c] && en.h===saved.bh && saved.p){ DISTRICT_LOCK={code:saved.c,name:DISTRICT_ACCESS[saved.c].name}; BLOCK_LOCK={name:en.block}; CLOUD_AUTH={district:saved.c,pass:saved.p}; startApp(); return; }
     } else if(saved){
@@ -2447,6 +2599,30 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
 })();
 // ================== end shared gate/cloud helpers ==================
 
+// ---- date of birth -> age helpers (CDR manual entry / record editor)
+function mpParseDmy(str){
+  const t = String(str||'').trim();
+  let m = t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
+  let y,mo,d;
+  if(m){ d=+m[1]; mo=+m[2]; y=+m[3]; }
+  else { m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return null; y=+m[1]; mo=+m[2]; d=+m[3]; }
+  const dt = new Date(y, mo-1, d);
+  return (dt.getFullYear()===y && dt.getMonth()===mo-1 && dt.getDate()===d) ? dt : null;
+}
+// Returns {days, text, category} for a child born on `dob` who died on (or is measured at) `ref`; null if dates are unusable.
+function mpAgeFromDob(dob, ref){
+  if(!dob || !ref || ref<dob) return null;
+  const days = Math.round((Date.UTC(ref.getFullYear(),ref.getMonth(),ref.getDate()) - Date.UTC(dob.getFullYear(),dob.getMonth(),dob.getDate()))/86400000);
+  let months = (ref.getFullYear()-dob.getFullYear())*12 + (ref.getMonth()-dob.getMonth()) - (ref.getDate()<dob.getDate()?1:0);
+  if(months<0) months=0;
+  let text;
+  if(days<30) text = days+(days===1?' day':' days');
+  else if(months<12) { const mm=Math.max(1,months); text = mm+(mm===1?' month':' months'); }
+  else { const yy=Math.floor(months/12); text = yy+(yy===1?' year':' years'); }
+  const category = days<=28 ? 'Neo natal' : (months<12 ? 'Infant' : 'Child');
+  return {days, text, category};
+}
+
 function makeModule(containerId, opts){
   const el = document.getElementById(containerId);
   el.innerHTML = `
@@ -2455,9 +2631,10 @@ function makeModule(containerId, opts){
         <button type="button" id="${containerId}-cloud-save">☁ Save records to cloud</button>
         <button type="button" id="${containerId}-cloud-load">☁ Load latest</button>
         <button type="button" id="${containerId}-cloud-delete" style="color:#f87171;border-color:#7f3a3a;">🗑 Delete cloud records</button>
-        <button type="button" class="logout-btn" onclick="mpDistrictLogout()" style="margin-left:auto;">⎋ Log out</button>
+        <button type="button" id="${containerId}-cloud-records" title="Show all records for this login and edit them">📋 Records</button>
         <span class="cloud-status" id="${containerId}-cloud-status"></span>
       </div>
+      <div id="${containerId}-records-panel" style="display:none;margin:0 0 14px;"></div>
       <div class="upload-row">
         <label class="upload-box" id="${containerId}-drop">
           <div class="icn">📁</div>
@@ -2591,12 +2768,14 @@ function makeModule(containerId, opts){
     const mdrFields =
       fld('deceasedName','Name of the Deceased Mother',txt('deceasedName'),true,true)+
       fld('husbandGuardian','Name &amp; address of the Husband / Guardian',txt('husbandGuardian','Name, village/address, mobile'),false,true)+
+      fld('age','Age (years)',`<input type="number" min="10" max="60" step="1" id="${id('age')}" placeholder="e.g. 26" style="${inpCss}">`)+
       fld('date','Date of death',`<input type="date" id="${id('date')}" min="${minDateStr()}" max="${maxDateStr()}" style="${inpCss}">`,true)+
       fld('place','Place of death',sel('place',[['Health Facilities','Health Facilities'],['Home','Home'],['Transit','Transit']]),true)+
       fld('period','Death period',sel('period',[['Antenatal','Antenatal'],['Intranatal','Intranatal'],['Post natal','Post natal'],['Post Abortion','Post Abortion']]),true)+
       fld('facilityName','Name of facility',txt('facilityName'))+
       `<div id="${id('days-wrap')}" style="flex:1 1 190px;min-width:160px;display:none;"><label for="${id('days')}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">Days: Delivery→Death</label><input type="number" min="0" id="${id('days')}" style="${inpCss}"></div>`+
-      fld('directCause','Direct cause of death',txt('directCause'),false,true)+
+      fld('directCause','Direct cause of death',sel('directCause',MDR_CAUSE_LABELS.filter(c=>c!=='Others').concat(['Other']).map(c=>[c,c])),false,true)+
+      `<div id="${id('directCauseOther-wrap')}" style="flex:2 1 320px;min-width:260px;display:none;"><label for="${id('directCauseOther')}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">Specify other direct cause <span style="color:#c0392b;">*</span></label><input type="text" id="${id('directCauseOther')}" placeholder="Type the cause of death" autocomplete="off" style="${inpCss}"></div>`+
       fld('associatedCause','Associated cause',txt('associatedCause'),false,true)+
       fld('hrp','High risk pregnancy',sel('hrp',[['Yes','Yes'],['No','No']]))+
       fld('hrpDetails','High risk details',txt('hrpDetails'),false,true)+
@@ -2608,7 +2787,8 @@ function makeModule(containerId, opts){
       fld('place','Place of death',sel('place',[['Public facility','Public facility'],['Private facility','Private facility'],['Home','Home'],['In transit','In transit']]),true)+
       fld('ageCategory','Age category',sel('ageCategory',[['Neo natal','Neo natal'],['Infant','Infant'],['Child','Child']]),true)+
       fld('date','Date of death',`<input type="date" id="${id('date')}" min="${minDateStr()}" max="${maxDateStr()}" style="${inpCss}">`,false)+
-      fld('age','Age (e.g. 12 days)',txt('age'))+
+      fld('dob','Date of birth',`<input type="date" id="${id('dob')}" max="${maxDateStr()}" style="${inpCss}">`)+
+      fld('age','Age (auto from date of birth)',txt('age','Fills from date of birth'))+
       fld('birthWeight','Birth weight (kg)',txt('birthWeight'))+
       fld('facilityName','Name of facility',txt('facilityName'))+
       fld('causeMajor','Probable cause of death (major)',sel('causeMajor',CDR_CAUSE_LABELS.map(c=>[c,c])),false,true)+
@@ -2643,12 +2823,16 @@ function makeModule(containerId, opts){
       const o = MDR_DISTRICTS.find(d=>normalizeDistrict(d)===want);
       if(o){ $('district').value = o; $('district').disabled = true; }
       if(BLOCK_LOCK){ $('block').value = BLOCK_LOCK.name; $('block').readOnly = true; }
+      if(FACILITY_LOCK && !isMdr){   // SNCU/NBSU login: facility and place of death are fixed
+        $('facilityName').value = FACILITY_LOCK.name; $('facilityName').readOnly = true;
+        $('place').value = 'Public facility'; $('place').disabled = true;
+      }
     }
     $('toggle').addEventListener('click', ()=>{ const p=$('panel'); const open = p.style.display==='none'; p.style.display = open ? '' : 'none'; $('toggle').textContent = open ? '✕ Close' : '➕ New entry'; applyLock(); $('date').max = maxDateStr(); $('date').min = minDateStr(); if(open){ try{ p.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ p.scrollIntoView(); } } });
     applyLock();
     // Manual entry is available to BLOCK and DISTRICT logins only (admin/state and offline sessions never see it).
     function applyAccess(){
-      const ok = !!DISTRICT_LOCK;
+      const ok = !!DISTRICT_LOCK && !(FACILITY_LOCK && isMdr);
       host.style.display = ok ? '' : 'none';
       if(!ok){ const pn = $('panel'); if(pn) pn.style.display = 'none'; }
       else applyLock();
@@ -2668,6 +2852,16 @@ function makeModule(containerId, opts){
     if(isMdr){
       const syncPeriod = ()=>{ $('days-wrap').style.display = $('period').value==='Post natal' ? '' : 'none'; };
       $('period').addEventListener('change', syncPeriod); syncPeriod();
+      const syncPlace = ()=>{   // facility name only applies to deaths in a health facility
+        const w = $('facilityName').parentElement, hide = ['Home','Transit'].includes($('place').value);
+        w.style.display = hide ? 'none' : ''; if(hide) $('facilityName').value='';
+      };
+      $('place').addEventListener('change', syncPlace); syncPlace();
+      const syncCause = ()=>{
+        const o = $('directCause').value==='Other';
+        $('directCauseOther-wrap').style.display = o ? '' : 'none'; if(!o) $('directCauseOther').value='';
+      };
+      $('directCause').addEventListener('change', syncCause); syncCause();
       const syncHrp = ()=>{ $('hrpDetails').disabled = $('hrp').value!=='Yes'; if($('hrp').value!=='Yes') $('hrpDetails').value=''; };
       $('hrp').addEventListener('change', syncHrp); syncHrp();
     }
@@ -2681,15 +2875,30 @@ function makeModule(containerId, opts){
       if(!Array.from($('year').options).some(o=>o.value===m[1])){ const o=document.createElement('option'); o.value=o.textContent=m[1]; $('year').appendChild(o); }
       $('year').value = m[1];
     });
+    // CDR: age (and age category) fill automatically from date of birth -> date of death (today when no date of death is given).
+    if(!isMdr){
+      const calcAge = ()=>{
+        const dob = mpParseDmy($('dob').value);
+        if(!dob){ return; }
+        const ref = mpParseDmy($('date').value) || new Date();
+        const a = mpAgeFromDob(dob, ref);
+        if(!a){ msg('Date of birth cannot be after the date of death.', true); $('age').value=''; return; }
+        msg('');
+        $('age').value = a.text; $('ageCategory').value = a.category;
+      };
+      $('dob').addEventListener('change', calcAge);
+      $('dob').addEventListener('input', calcAge);
+      $('date').addEventListener('change', calcAge);
+    }
     const KEEP = ['district','month','year']; // kept between entries to speed up data entry
     function resetForm(){
       host.querySelectorAll('input,select').forEach(el=>{
         if(el.id===id('toggle')) return;
         const key = el.id.replace(id(''),'');
-        if(KEEP.includes(key) || (BLOCK_LOCK && key==='block')) return;
+        if(KEEP.includes(key) || (BLOCK_LOCK && key==='block') || (FACILITY_LOCK && (key==='facilityName' || key==='place'))) return;
         if(el.tagName==='SELECT') el.value=''; else el.value='';
       });
-      if(isMdr){ $('days-wrap').style.display='none'; $('hrpDetails').disabled=true; }
+      if(isMdr){ $('days-wrap').style.display='none'; $('hrpDetails').disabled=true; $('place').dispatchEvent(new Event('change')); $('directCause').dispatchEvent(new Event('change')); }
     }
     $('reset').addEventListener('click', ()=>{ resetForm(); msg(''); });
     $('save').addEventListener('click', ()=>{
@@ -2700,9 +2909,16 @@ function makeModule(containerId, opts){
       const labels = {district:'District',block:'Block',month:'Reporting month',year:'Reporting year',deceasedName:'Name of the Deceased Mother',date:'Date of death',place:'Place of death',period:'Death period',gender:'Sex',ageCategory:'Age category'};
       const maxS = maxDateStr();
       if(v('date') && (v('date')>maxS || v('date')<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' (3 days ago) and '+isoToDmy(maxS)+' (today).', true); $('date').focus(); return; }
+      if(!isMdr && v('dob')){
+        const dob = mpParseDmy(v('dob')), dod = v('date') ? mpParseDmy(v('date')) : null;
+        if(dob && dod && dob>dod){ msg('Date of birth cannot be after the date of death.', true); $('dob').focus(); return; }
+        if(dob && dob>new Date()){ msg('Date of birth cannot be in the future.', true); $('dob').focus(); return; }
+      }
+      if(isMdr && v('directCause')==='Other' && !v('directCauseOther')){ msg('Please specify the other direct cause of death.', true); $('directCauseOther').focus(); return; }
       const miss = need.filter(k=>!v(k));
       if(miss.length){ msg('Please fill: '+miss.map(k=>labels[k]).join(', '), true); const el=$(miss[0]); if(el) el.focus(); return; }
       if(BLOCK_LOCK && !blockSame(v('block'), BLOCK_LOCK.name)){ msg('This login can only add records for '+BLOCK_LOCK.name+' block.', true); return; }
+      if(FACILITY_LOCK && isMdr){ msg('SNCU/NBSU logins add child death (CDR) records only.', true); return; }
       { const mi = MONTHS.indexOf(v('month')), yy = +v('year');
         if(mi>=0 && yy && (yy+'-'+pad2(mi+1)+'-01')>maxS){ msg('Reporting month cannot be after the month of '+isoToDmy(maxS)+' (today + 3 days).', true); return; } }
       if(DISTRICT_LOCK && normalizeDistrict(v('district'))!==normalizeDistrict(DISTRICT_LOCK.name)){ msg('This login can only add records for '+DISTRICT_LOCK.name+'.', true); return; }
@@ -2715,11 +2931,11 @@ function makeModule(containerId, opts){
           district: normalizeDistrict(v('district')), block: v('block'), phcArea: v('phcArea'), subCentre: v('subCentre'),
           month: v('month'), year: v('year'), date: dateStr,
           place: normalizePlaceValue(v('place')), period: normalizePeriodValue(v('period')),
-          directCause: v('directCause'), associatedCause: v('associatedCause'), facilityName: v('facilityName'),
+          directCause: v('directCause')==='Other' ? v('directCauseOther') : v('directCause'), associatedCause: v('associatedCause'), facilityName: ['Home','Transit'].includes(v('place')) ? '' : v('facilityName'),
           daysDeliveryToDeath: v('period')==='Post natal' ? v('days') : '',
           hrp: hrp, hrpDetails: isHrpYes(hrp) ? v('hrpDetails') : '',
           gravida: v('gravida'), para: v('para'),
-          deceasedName: v('deceasedName'), husbandGuardian: v('husbandGuardian'), nameCombined: '',
+          deceasedName: v('deceasedName'), husbandGuardian: v('husbandGuardian'), age: v('age'), nameCombined: '',
           entrySource: 'Manual entry'
         };
         const nk = x=>String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -2729,8 +2945,8 @@ function makeModule(containerId, opts){
         rec = {
           district: normalizeDistrict(v('district')), block: v('block'), phcArea: v('phcArea'), subCentre: v('subCentre'),
           month: v('month'), year: v('year'), gender: v('gender'), caste: v('caste'),
-          place: v('place'), facilityName: v('facilityName'), causeMajor: v('causeMajor'), causeOther: v('causeOther'),
-          ageCategory: v('ageCategory'), age: v('age'), birthWeight: v('birthWeight'),
+          place: FACILITY_LOCK ? 'Public facility' : v('place'), facilityName: FACILITY_LOCK ? FACILITY_LOCK.name : v('facilityName'), causeMajor: v('causeMajor'), causeOther: v('causeOther'),
+          ageCategory: v('ageCategory'), age: v('age'), dob: v('dob') ? isoToDmy(v('dob')) : '', birthWeight: v('birthWeight'),
           date: v('date') ? isoToDmy(v('date')) : '',
           entrySource: 'Manual entry'
         };
@@ -2743,6 +2959,7 @@ function makeModule(containerId, opts){
       const si = document.getElementById(`${containerId}-rec-search-input`); if(si && si.value) si.dispatchEvent(new Event('input'));
       resetForm();
       msg('Record added ('+lineListing.records.length.toLocaleString()+' loaded). Click ☁ Save records to cloud to keep it.');
+      document.dispatchEvent(new CustomEvent('mp-rec-changed',{detail:containerId}));
       refreshBlocks();
     });
   })();
@@ -2751,7 +2968,7 @@ function makeModule(containerId, opts){
   const cloudLoadBtn = document.getElementById(`${containerId}-cloud-load`);
   const cloudDeleteBtn = document.getElementById(`${containerId}-cloud-delete`);
   (window.__mpBlockSources = window.__mpBlockSources || []).push(()=>(lineListing && lineListing.records) || []);
-  if(BLOCK_LOCK){ [cloudSaveBtn, cloudDeleteBtn].forEach(b=>{ if(b) b.style.display='none'; }); }
+  if(BLOCK_LOCK || FACILITY_LOCK){ if(cloudDeleteBtn) cloudDeleteBtn.style.display='none'; }
   const cloudStatusEl = document.getElementById(`${containerId}-cloud-status`);
   let cloudBusy = false;
   function setCloudStatus(msg, isErr){ if(cloudStatusEl){ cloudStatusEl.textContent = msg; cloudStatusEl.style.color = isErr ? '#c0392b' : (/^Checking cloud/i.test(msg) ? '#1e8e3e' : '#666'); } }
@@ -2779,7 +2996,6 @@ function makeModule(containerId, opts){
     return arr;
   }
   async function cloudSaveModule(){
-    if(BLOCK_LOCK){ setCloudStatus('Block logins are view-only. Ask the district login to save records.', true); return; }
     if(!cloudReady() || cloudBusy) return;
     if(!lineListing || !lineListing.records || !lineListing.records.length){ setCloudStatus('Load a file first.', true); return; }
     cloudBusy = true;
@@ -2787,6 +3003,7 @@ function makeModule(containerId, opts){
     try{
       const groups = new Map(); let skipped = 0; const skippedNames = new Map();
       lineListing.records.forEach(r=>{
+        if(!mpInScope(r)){ skipped++; const nk = BLOCK_LOCK ? '(other block) '+String(r.block||'blank') : '(other facility) '+String(r.facilityName||'blank'); skippedNames.set(nk, (skippedNames.get(nk)||0)+1); return; }
         const code = DISTRICT_NAME_TO_CODE[normalizeDistrict(r.district)];
         if(!code || (CLOUD_AUTH.district!=='ADMIN' && code!==CLOUD_AUTH.district)){
           skipped++;
@@ -2813,7 +3030,8 @@ function makeModule(containerId, opts){
           if(em){
             const old = await cloudFetchDistrictRecords(em); // throws on failure -> save aborted, nothing overwritten
             const newKeys = new Set(arr.map(mpPeriodKey));
-            const keep = old.filter(r=>!newKeys.has(mpPeriodKey(r)));
+            // District/admin: months being saved replace the old months. Block login: only THIS block's records of those months are replaced; other blocks' records are always kept.
+            const keep = old.filter(r=> (BLOCK_LOCK||FACILITY_LOCK) ? !(mpInScope(r) && newKeys.has(mpPeriodKey(r))) : !newKeys.has(mpPeriodKey(r)));
             keptOld += keep.length;
             merged = keep.concat(arr);
           }
@@ -2832,7 +3050,7 @@ function makeModule(containerId, opts){
         const top = [...skippedNames.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>n+' ×'+c).join(', ');
         skipMsg = ' ('+skipped+' skipped — unrecognised district value(s): '+top+(skippedNames.size>5?', …':'')+')';
       }
-      saveSummary = 'Saved '+saved.toLocaleString()+' records'+(keptOld?' (+ '+keptOld.toLocaleString()+' earlier-month records kept)':'')+' to cloud'+skipMsg+'.';
+      saveSummary = 'Saved '+saved.toLocaleString()+' records'+(keptOld?((BLOCK_LOCK||FACILITY_LOCK)?' (+ '+keptOld.toLocaleString()+' other records of the district kept)':' (+ '+keptOld.toLocaleString()+' earlier-month records kept)'):'')+' to cloud'+skipMsg+'.';
       setCloudStatus(saveSummary);
       saveOk = true;
     }catch(e){ setCloudStatus('Cloud save failed'+(typeof curDistName!=='undefined'&&curDistName?' while saving '+curDistName:'')+': '+e.message, true); console.error('Cloud save error', e); }
@@ -2843,7 +3061,7 @@ function makeModule(containerId, opts){
     }
   }
   async function cloudDeleteModule(){
-    if(BLOCK_LOCK){ setCloudStatus('Block logins cannot delete cloud records.', true); return; }
+    if(BLOCK_LOCK || FACILITY_LOCK){ setCloudStatus('Block and SNCU/NBSU logins cannot delete cloud records.', true); return; }
     if(!cloudReady() || cloudBusy) return;
     cloudBusy = true;
     try{
@@ -2875,6 +3093,7 @@ function makeModule(containerId, opts){
     finally{ cloudBusy = false; }
   }
   async function cloudLoadModule(silent){
+    if(FACILITY_LOCK && containerId==='mdr') return;   // SNCU/NBSU logins use CDR only
     if(!cloudReady() || cloudBusy) return;
     cloudBusy = true;
     try{
@@ -2916,8 +3135,169 @@ function makeModule(containerId, opts){
         setCloudStatus('Loaded '+lineListing.records.length.toLocaleString()+' records from cloud — months: '+(good.join(', ')||'none')+(bad.length?' | UNRECOGNISED month values: '+bad.join(', '):''), bad.length>0);
       })();
     }catch(e){ setCloudStatus('Cloud load failed: '+e.message, true); }
-    finally{ cloudBusy = false; }
+    finally{ cloudBusy = false; document.dispatchEvent(new CustomEvent('mp-rec-changed',{detail:containerId})); }
   }
+
+  // ---- 📋 Records: every record visible to this login (admin = all districts, district = its district, block = its block), with Edit.
+  (function(){
+    const btn = document.getElementById(`${containerId}-cloud-records`);
+    const panel = document.getElementById(`${containerId}-records-panel`);
+    if(!btn || !panel) return;
+    const isMdrM = containerId==='mdr';
+    const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const PLACE_OPTS = isMdrM ? [['facility','Health Facilities'],['home','Home'],['transit','Transit']] : ['Public facility','Private facility','Home','In transit'].map(x=>[x,x]);
+    const FIELDS = isMdrM ? [
+      ['deceasedName','Name of the Deceased Mother','text',null,1],
+      ['husbandGuardian','Name & address of the Husband / Guardian','text',null,1],
+      ['age','Age (years)','number'],
+      ['date','Date of death (dd-mm-yyyy)','text'],
+      ['place','Place of death','select',PLACE_OPTS],
+      ['period','Death period','select',[['antenatal','Antenatal'],['intranatal','Intranatal'],['postnatal','Post natal'],['postabortion','Post Abortion']]],
+      ['daysDeliveryToDeath','Days: Delivery→Death (Post natal)','number'],
+      ['facilityName','Name of facility','text'],
+      ['directCause','Direct cause of death','text',null,1],
+      ['associatedCause','Associated cause','text',null,1],
+      ['hrp','High risk pregnancy','select',[['Yes','Yes'],['No','No']]],
+      ['hrpDetails','High risk details','text',null,1],
+      ['gravida','Gravida','text'],['para','Para','text'],
+      ['phcArea','PHC area','text'],['subCentre','Sub centre','text'],
+      ['block','Block','text'],['month','Reporting month','select',MON.map(m=>[m,m])],['year','Reporting year','text']
+    ] : [
+      ['gender','Sex','select',[['Male','Male'],['Female','Female']]],
+      ['caste','Caste','select',[['GENERAL','General'],['SC','SC'],['ST','ST'],['OBC','OBC']]],
+      ['place','Place of death','select',PLACE_OPTS],
+      ['dob','Date of birth (dd-mm-yyyy)','text'],
+      ['date','Date of death (dd-mm-yyyy)','text'],
+      ['age','Age (auto from date of birth)','text'],
+      ['ageCategory','Age category','select',[['Neo natal','Neo natal'],['Infant','Infant'],['Child','Child']]],
+      ['birthWeight','Birth weight (kg)','text'],
+      ['facilityName','Name of facility','text'],
+      ['causeMajor','Probable cause of death (major)','select',CDR_CAUSE_LABELS.map(c=>[c,c]),1],
+      ['causeOther','Other cause / details','text',null,1],
+      ['phcArea','PHC area','text'],['subCentre','Sub centre','text'],
+      ['block','Block','text'],['month','Reporting month','select',MON.map(m=>[m,m])],['year','Reporting year','text']
+    ];
+    let q = '', open = false;
+    const inCss = 'width:100%;padding:8px 10px;border:1px solid #8a94ac;border-radius:6px;font-size:14px;box-sizing:border-box;background:#fff;color:#111827;color-scheme:light;';
+    const LIMIT = 200;
+    function recs(){ return (lineListing && lineListing.records) || []; }
+    function hayOf(r){ return Object.keys(r).filter(k=>k!=='__hay').map(k=>String(r[k]==null?'':r[k])).join(' ').toLowerCase(); }
+    function render(){
+      if(!open){ panel.style.display='none'; return; }
+      panel.style.display='';
+      const all = recs();
+      const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+      const idx = [];
+      for(let i=0;i<all.length;i++){ if(!words.length){ idx.push(i); } else { const h = hayOf(all[i]); if(words.every(w=>h.indexOf(w)>=0)) idx.push(i); } }
+      const shown = idx.slice(0, LIMIT);
+      const th = t=>`<th style="text-align:left;padding:6px 8px;">${t}</th>`;
+      const td = t=>`<td>${escapeHtml(t==null?'':t)}</td>`;
+      const head = isMdrM ? ['','District','Block','Mother','Husband / Guardian','Age','Date of death','Place','Period','Month / Year']
+                          : ['','District','Block','Sex','Date of birth','Date of death','Age','Age category','Place','Month / Year'];
+      const rows = shown.map(i=>{
+        const r = all[i];
+        const my = [r.month,r.year].filter(Boolean).join(' ');
+        const eb = `<td><button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;">✏ Edit</button></td>`;
+        return '<tr>'+eb+(isMdrM
+          ? td(r.district)+td(r.block)+td(r.nameCombined||r.deceasedName)+td(r.husbandGuardian)+td(r.age)+td(r.date)+td(PLACE_LABELS[r.place]||r.place)+td(PERIOD_LABELS[r.period]||r.period)+td(my)
+          : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(my))+'</tr>';
+      }).join('');
+      const scope = BLOCK_LOCK ? (BLOCK_LOCK.name+' block') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'all districts');
+      panel.innerHTML = `<div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--panel2);">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+          <b style="font-size:14px;">📋 ${isMdrM?'MDR':'CDR'} records — ${escapeHtml(scope)}</b>
+          <input type="search" id="${containerId}-rp-q" value="${escapeHtml(q)}" placeholder="🔍 Filter records…" autocomplete="off" style="flex:1 1 220px;min-width:180px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <button type="button" class="dl-tab" id="${containerId}-rp-close">✕ Close</button>
+        </div>
+        ${all.length ? `<div style="overflow:auto;max-height:420px;border:1px solid var(--border);border-radius:8px;"><table style="border-collapse:collapse;font-size:12.5px;white-space:nowrap;"><thead style="position:sticky;top:0;background:var(--panel2);"><tr>${head.map(th).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+        <div style="color:var(--muted);font-size:12px;margin-top:6px;">${idx.length>LIMIT?'Showing first '+LIMIT+' of ':''}${idx.length.toLocaleString()} record${idx.length===1?'':'s'}${words.length?' matching':''}. After editing, click <b>☁ Save records to cloud</b> to keep the changes.</div>`
+        : `<div class="empty" style="padding:10px 0;">No records loaded yet — upload a line-listing or use ☁ Load latest.</div>`}
+      </div>`;
+      const qi = document.getElementById(`${containerId}-rp-q`);
+      if(qi){ let t=null; qi.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>{ q=qi.value; render(); const n=document.getElementById(`${containerId}-rp-q`); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } },250); }); }
+      document.getElementById(`${containerId}-rp-close`).onclick = ()=>{ open=false; render(); };
+      panel.querySelectorAll('.mp-rec-edit').forEach(b=>{ b.onclick = ()=>editRecord(+b.dataset.i); });
+    }
+    function editRecord(i){
+      const r = recs()[i]; if(!r) return;
+      const fid = k=>`${containerId}-ed-${k}`;
+      const field = ([k,label,type,optsL,wide])=>{
+        let cur = r[k]==null ? '' : String(r[k]);
+        let input;
+        if(type==='select'){
+          const o = optsL.slice();
+          if(cur && !o.some(x=>String(x[0]).toLowerCase()===cur.toLowerCase())) o.push([cur,cur]);
+          const curM = (o.find(x=>String(x[0]).toLowerCase()===cur.toLowerCase())||[cur])[0];
+          input = `<select id="${fid(k)}" style="${inCss}"><option value="">— select —</option>${o.map(x=>`<option value="${escapeHtml(x[0])}"${String(x[0])===String(curM)?' selected':''}>${escapeHtml(x[1])}</option>`).join('')}</select>`;
+        } else {
+          const ro = ((k==='block' && BLOCK_LOCK) || (k==='facilityName' && FACILITY_LOCK)) ? ' readonly' : '';
+          input = `<input type="${type==='number'?'number':'text'}" ${type==='number'?'min="0" ':''}id="${fid(k)}" value="${escapeHtml(cur)}"${ro} autocomplete="off" style="${inCss}">`;
+        }
+        return `<div style="flex:${wide?'2 1 320px':'1 1 190px'};min-width:${wide?'260px':'160px'};"><label for="${fid(k)}" style="font-size:13px;font-weight:600;color:#111827;display:block;margin-bottom:3px;">${escapeHtml(label)}</label>${input}</div>`;
+      };
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px;';
+      ov.innerHTML = `<div style="background:#fff;color:#111827;border-radius:12px;max-width:820px;width:100%;padding:16px;box-sizing:border-box;">
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">✏ Edit ${isMdrM?'MDR':'CDR'} record</div>
+        <div style="font-size:12.5px;color:#5b6475;margin-bottom:12px;">${escapeHtml(r.district||'')}${r.block?' · '+escapeHtml(r.block):''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">${FIELDS.map(field).join('')}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;">
+          <button type="button" id="${fid('save')}" class="dl-tab" style="background:#1d6fb8;color:#fff;border-color:#1d6fb8;">✔ Save changes</button>
+          <button type="button" id="${fid('cancel')}" class="dl-tab" style="color:#111827;">Cancel</button>
+          <span id="${fid('msg')}" style="font-size:12.5px;color:#c0392b;"></span>
+        </div></div>`;
+      document.body.appendChild(ov);
+      const g = k=>{ const e=document.getElementById(fid(k)); return e ? String(e.value).trim() : ''; };
+      const emsg = t=>{ document.getElementById(fid('msg')).textContent = t; };
+      const close = ()=>{ ov.remove(); };
+      document.getElementById(fid('cancel')).onclick = close;
+      ov.addEventListener('mousedown', e=>{ if(e.target===ov) close(); });
+      if(isMdrM){
+        const pl = document.getElementById(fid('place')), fw = document.getElementById(fid('facilityName')).parentElement;
+        const sync = ()=>{ const h = pl.value==='home' || pl.value==='transit'; fw.style.display = h ? 'none' : ''; if(h) document.getElementById(fid('facilityName')).value=''; };
+        pl.addEventListener('change', sync); sync();
+      }
+      if(!isMdrM){
+        const calc = ()=>{
+          const dob = mpParseDmy(g('dob')); if(!dob) return;
+          const a = mpAgeFromDob(dob, mpParseDmy(g('date')) || new Date());
+          if(!a){ emsg('Date of birth cannot be after the date of death.'); return; }
+          emsg(''); document.getElementById(fid('age')).value = a.text; document.getElementById(fid('ageCategory')).value = a.category;
+        };
+        document.getElementById(fid('dob')).addEventListener('input', calc);
+        document.getElementById(fid('date')).addEventListener('input', calc);
+      }
+      document.getElementById(fid('save')).onclick = ()=>{
+        if(isMdrM && !g('deceasedName')){ emsg('Name of the Deceased Mother is required.'); return; }
+        if(!g('block')){ emsg('Block is required.'); return; }
+        if(BLOCK_LOCK && !blockSame(g('block'), BLOCK_LOCK.name)){ emsg('This login can only keep records in '+BLOCK_LOCK.name+' block.'); return; }
+        if(!isMdrM && g('dob')){
+          const dob = mpParseDmy(g('dob')); if(!dob){ emsg('Date of birth must be dd-mm-yyyy.'); return; }
+          const dod = g('date') ? mpParseDmy(g('date')) : null;
+          if(dod && dob>dod){ emsg('Date of birth cannot be after the date of death.'); return; }
+        }
+        const nr = Object.assign({}, r);   // fresh object (the search index cache lives on the old one)
+        FIELDS.forEach(([k])=>{ nr[k] = g(k); });
+        if(isMdrM){
+          nr.place = normalizePlaceValue(nr.place); nr.period = normalizePeriodValue(nr.period);
+          if(nr.period!=='postnatal') nr.daysDeliveryToDeath = '';
+          if(!isHrpYes(nr.hrp)) nr.hrpDetails = '';
+        }
+        lineListing.records[i] = nr;
+        close();
+        lineListingRebuildAndRender();
+        const si = document.getElementById(`${containerId}-rec-search-input`); if(si && si.value) si.dispatchEvent(new Event('input'));
+        render();
+        setCloudStatus('Record updated in this browser. Click ☁ Save records to cloud to keep the change.');
+      };
+    }
+    btn.addEventListener('click', async ()=>{
+      open = !open;
+      if(open && !recs().length && cloudReady() && !cloudBusy){ try{ await cloudLoadModule(true); }catch(_){} }
+      render();
+    });
+    document.addEventListener('mp-rec-changed', e=>{ if(open && (!e.detail || e.detail===containerId)) render(); });
+  })();
   cloudSaveBtn.addEventListener('click', cloudSaveModule);
   cloudLoadBtn.addEventListener('click', ()=>cloudLoadModule(false));
   cloudDeleteBtn.addEventListener('click', cloudDeleteModule);
@@ -3599,6 +3979,8 @@ function makeModule(containerId, opts){
       if(typeof BLOCK_LOCK!=='undefined' && BLOCK_LOCK){
         // Block login: second card shows the logged-in block's name.
         kpis.push({v: BLOCK_LOCK.name, l:'Block'});
+      } else if(typeof FACILITY_LOCK!=='undefined' && FACILITY_LOCK){
+        kpis.push({v: FACILITY_LOCK.name, l: FACILITY_LOCK.kind});
       } else if(blockFilterActive){
         kpis.push({v: blockFilterEl.value, l:'Block'});
       } else if(lineListing){

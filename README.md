@@ -26,3 +26,8 @@ Replace `index.html` and commit. Installed apps pick up the new version the next
 ## Notes
 - PWAs need HTTPS; GitHub Pages provides it. Opening the file directly from disk will not install.
 - Cloud records and login still call your Google Apps Script (deploy it with access "Anyone"). These calls are never cached, so records need a connection; the app shell itself opens offline.
+
+## SNCU / NBSU logins
+- A **district** login clicks **🏥 SNCU/NBSU logins** (top bar), generates a passcode per SNCU/NBSU of that district and downloads a *logins file* + a passcode list (keep the list private).
+- Each facility opens the dashboard, taps **Load SNCU/NBSU logins file** (once per device), picks its district, then its facility, and enters its passcode.
+- Facility logins work on **CDR** only: they see/add/edit the records whose *Name of facility* is their facility, and can save them to the cloud (other facilities' and blocks' records are never touched). They cannot delete cloud records.
