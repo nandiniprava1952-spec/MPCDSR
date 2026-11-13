@@ -2747,8 +2747,8 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   // fill the legacy (hidden) block/facility/SNCU lists for a district, then read the options back
   function legacyFor(code){ L.dist.value = code; L.dist.dispatchEvent(new Event('change')); }
   const labelParts = t=>{ const m = String(t).match(/^(.*?):\s*([\s\S]*)$/); return m ? {k:m[1], n:m[2]} : {k:'', n:t}; };
-  const TYPE_FIRST = ['SC','PHC'];   // SC and PHC first, the rest alphabetically
-  const typeSort = (a,b)=>{ const ia=TYPE_FIRST.indexOf(a), ib=TYPE_FIRST.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib) || a.localeCompare(b); };
+  const TYPE_ALLOWED = ['CHC','SDH','DHH','MCH'];   // facility login offers only these facility types, in this order
+  const typeSort = (a,b)=>TYPE_ALLOWED.indexOf(a)-TYPE_ALLOWED.indexOf(b);
   let facByType = {}, sncuByType = {};
   $('ltBlkDist').addEventListener('change', function(){
     legacyFor(this.value);
@@ -2758,7 +2758,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   $('ltFacDist').addEventListener('change', function(){
     legacyFor(this.value); facByType = {};
     Array.from(L.blk.options).filter(o=>o.value.indexOf('f:FACILITY|')===0).forEach(o=>{ const p = labelParts(o.textContent); const k = p.k||'Facility'; (facByType[k] = facByType[k] || []).push({v:o.value, t:p.n}); });
-    const types = Object.keys(facByType).sort(typeSort);
+    const types = Object.keys(facByType).filter(t=>TYPE_ALLOWED.indexOf(t)>=0).sort(typeSort);
     $('ltFacType').innerHTML = optHtml(this.value && !types.length ? 'No facility logins for this district' : 'Select facility type…', types.map(t=>({v:t,t:t})));
     $('ltFacSel').innerHTML = optHtml('Select facility…', []);
   });
@@ -2966,11 +2966,11 @@ function makeModule(containerId, opts){
     const id = k=>`${containerId}-ar-${k}`;
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const esc = escapeHtml;
-    // Date of death must fall between 3 days before today and today (local date).
+    // Date of death must fall between 7 days before today and today (local date).
     const pad2 = n=>String(n).padStart(2,'0');
     const dateStr = off=>{ const d=new Date(); d.setDate(d.getDate()+off); return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); };
     const maxDateStr = ()=>dateStr(0);
-    const minDateStr = ()=>dateStr(-3);
+    const minDateStr = ()=>dateStr(-7);
     const isoToDmy = iso=>{ const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3]+'-'+m[2]+'-'+m[1] : iso; };
     const inpCss = 'width:100%;padding:9px 10px;border:1px solid #8a94ac;border-radius:6px;font-size:15px;font-weight:500;line-height:1.3;box-sizing:border-box;background:#fff;color:#111827;color-scheme:light;';
     const fld = (k,label,html,req,wide)=>`<div style="flex:${wide?'2 1 320px':'1 1 190px'};min-width:${wide?'260px':'160px'};"><label for="${id(k)}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">${label}${req?' <span style="color:#c0392b;">*</span>':''}</label>${html}</div>`;
@@ -3084,10 +3084,10 @@ function makeModule(containerId, opts){
       const syncHrp = ()=>{ $('hrpDetails').disabled = $('hrp').value!=='Yes'; if($('hrp').value!=='Yes') $('hrpDetails').value=''; };
       $('hrp').addEventListener('change', syncHrp); syncHrp();
     }
-    // Month/year follow the date of death (still editable afterwards); only today and the 3 days before are accepted.
+    // Month/year follow the date of death (still editable afterwards); only today and the 7 days before are accepted.
     $('date').addEventListener('change', ()=>{
       const dv = String($('date').value||'');
-      if(dv && (dv>maxDateStr() || dv<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' (3 days ago) and '+isoToDmy(maxDateStr())+' (today).', true); $('date').value=''; return; }
+      if(dv && (dv>maxDateStr() || dv<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' (7 days ago) and '+isoToDmy(maxDateStr())+' (today).', true); $('date').value=''; return; }
       const m = dv.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return;
       msg('');
       $('month').value = MONTHS[+m[2]-1];
@@ -3127,7 +3127,7 @@ function makeModule(containerId, opts){
                          : ['district','block','month','year','gender','place','ageCategory'];
       const labels = {district:'District',block:'Block',month:'Reporting month',year:'Reporting year',deceasedName:'Name of the Deceased Mother',date:'Date of death',place:'Place of death',period:'Death period',gender:'Sex',ageCategory:'Age category'};
       const maxS = maxDateStr();
-      if(v('date') && (v('date')>maxS || v('date')<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' (3 days ago) and '+isoToDmy(maxS)+' (today).', true); $('date').focus(); return; }
+      if(v('date') && (v('date')>maxS || v('date')<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' (7 days ago) and '+isoToDmy(maxS)+' (today).', true); $('date').focus(); return; }
       if(!isMdr && v('dob')){
         const dob = mpParseDmy(v('dob')), dod = v('date') ? mpParseDmy(v('date')) : null;
         if(dob && dod && dob>dod){ msg('Date of birth cannot be after the date of death.', true); $('dob').focus(); return; }
@@ -3139,7 +3139,7 @@ function makeModule(containerId, opts){
       if(BLOCK_LOCK && !blockSame(v('block'), BLOCK_LOCK.name)){ msg('This login can only add records for '+BLOCK_LOCK.name+' block.', true); return; }
       if(FACILITY_LOCK && isMdr){ msg('Facility logins add child death (CDR) records only.', true); return; }
       { const mi = MONTHS.indexOf(v('month')), yy = +v('year');
-        if(mi>=0 && yy && (yy+'-'+pad2(mi+1)+'-01')>maxS){ msg('Reporting month cannot be after the month of '+isoToDmy(maxS)+' (today + 3 days).', true); return; } }
+        if(mi>=0 && yy && (yy+'-'+pad2(mi+1)+'-01')>maxS){ msg('Reporting month cannot be after the month of '+isoToDmy(maxS)+' (today).', true); return; } }
       if(DISTRICT_LOCK && normalizeDistrict(v('district'))!==normalizeDistrict(DISTRICT_LOCK.name)){ msg('This login can only add records for '+DISTRICT_LOCK.name+'.', true); return; }
       let rec;
       if(isMdr){

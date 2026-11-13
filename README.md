@@ -29,7 +29,7 @@ Replace `index.html` and commit. Installed apps pick up the new version the next
 
 ## Facility logins (SNCU / NBSU and all facilities)
 - Facility logins are **built into the page** (`FACILITY_ACCESS` in `index.html`), like the block logins. There is no logins file to load.
-- A facility officer opens the dashboard, picks their district, then their facility (SNCU/NBSU in the second list; PHC, CHC, SC, etc. in the Block / Facility list, shown with the facility code) and enters the facility's passcode.
+- A facility officer opens the dashboard, picks their district, then their facility (SNCU/NBSU in the second list; only CHC, SDH, DHH and MCH in the Facility type list, shown with the facility code) and enters the facility's passcode.
 - Facility logins work on **CDR** only: they see/add/edit the records whose *Name of facility* is their facility, and can save them to the cloud (other facilities' and blocks' records are never touched). They cannot delete cloud records.
 - Each entry holds the district's cloud passcode encrypted under the facility's passcode (PBKDF2 + AES-GCM). No passcode or hash of it is stored in the page.
 - Facility master (`FACILITY_MASTER`, from facility.csv) is embedded in `index.html`.
