@@ -3316,7 +3316,9 @@ function makeModule(containerId, opts){
             const old = await cloudFetchDistrictRecords(em); // throws on failure -> save aborted, nothing overwritten
             const newKeys = new Set(arr.map(mpPeriodKey));
             // District/admin: months being saved replace the old months. Block login: only THIS block's records of those months are replaced; other blocks' records are always kept.
-            const keep = old.filter(r=> (BLOCK_LOCK||FACILITY_LOCK) ? !(mpInScope(r) && newKeys.has(mpPeriodKey(r))) : !newKeys.has(mpPeriodKey(r)));
+            // KoboToolbox records are never replaced by a month's save; a copy already in this save (possibly edited) supersedes the cloud copy.
+            const koboIn = new Set(arr.filter(r=>r.koboId).map(r=>r.koboId));
+            const keep = old.filter(r=> r.koboId ? !koboIn.has(r.koboId) : ((BLOCK_LOCK||FACILITY_LOCK) ? !(mpInScope(r) && newKeys.has(mpPeriodKey(r))) : !newKeys.has(mpPeriodKey(r))));
             keptOld += keep.length;
             merged = keep.concat(arr);
           }
@@ -3384,6 +3386,8 @@ function makeModule(containerId, opts){
     cloudBusy = true;
     try{
       // Ask the cloud for the manifest straight away; read the on-device copy while that request is in flight.
+      // KoboToolbox: ask the server to pull any new submissions into the district snapshot first (server-throttled; ignored if not set up).
+      if(!silent || !window.__mpKoboAsked){ window.__mpKoboAsked = true; try{ setCloudStatus('Checking for new KoboToolbox submissions…'); await recCall('kobo_sync', {}); }catch(_){} }
       const manifestP = recCall('manifest', { module: containerId }); manifestP.catch(()=>{});
       // Fast path (district / block / facility / state logins): show the copy saved on this device immediately,
       // then confirm with the cloud below (no second render if nothing changed).
@@ -3580,6 +3584,8 @@ function makeModule(containerId, opts){
               if(c>0 && mpInScope(x)){ want.set(key,c-1); removed++; } else rest.push(x);
             }
             if(removed){
+              const kIds = arr.filter(r=>r.koboId).map(r=>r.koboId);
+              if(kIds.length){ try{ await recCall('kobo_forget', { module: containerId, district: code, ids: kIds }); }catch(_){} }
               const uploadId = String(Date.now());
               if(!rest.length && !BLOCK_LOCK){
                 await recCall('delete', { module: containerId, district: code });
