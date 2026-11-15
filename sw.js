@@ -1,9 +1,54 @@
-/* MPCDSR service worker: offline-capable app shell. Cloud (Apps Script) calls are never cached. */
-const VERSION = 'mpcdsr-v32';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+/* MPCDSR service worker: offline-capable app shell + controlled updates.
+   Cloud (Apps Script) calls are never cached.
+   RELEASING: change VERSION below on every release (e.g. mpcdsr-v31). Browsers detect a new version
+   by a change in this file, which is what makes the in-app "Update available" card appear. */
+const VERSION = 'mpcdsr-v31';
+const INDEX = './index.html';
+const OTHERS = ['./manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+const EST_INDEX = 2950000;   // fallback size (bytes) of index.html for progress when the server sends no length
 
+async function notify(msg){
+  const cs = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  cs.forEach(c => c.postMessage(msg));
+}
+
+// Download index.html while reporting progress (0..1). Returns a Response ready for the cache.
+async function fetchIndex(onFrac){
+  const res = await fetch(new Request(INDEX, { cache: 'reload' }));
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  if(!res.body || !res.body.getReader){ onFrac(1); return res; }
+  const enc = res.headers.get('content-encoding'), len = +res.headers.get('content-length') || 0;
+  const total = (!enc && len) ? len : EST_INDEX;
+  const reader = res.body.getReader(), chunks = []; let got = 0;
+  for(;;){
+    const r = await reader.read();
+    if(r.done) break;
+    chunks.push(r.value); got += r.value.length; onFrac(Math.min(0.99, got / total));
+  }
+  const h = new Headers(res.headers); h.delete('content-length'); h.delete('content-encoding');
+  onFrac(1);
+  return new Response(new Blob(chunks), { status: res.status, statusText: res.statusText, headers: h });
+}
+
+// No skipWaiting() here: a new version waits until the person taps "Update" in the app.
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const cache = await caches.open(VERSION);
+    let idx = 0, oth = 0, last = -1;
+    const report = () => {
+      const pct = Math.min(100, Math.round((idx * 0.9 + (oth / OTHERS.length) * 0.1) * 100));
+      if(pct !== last){ last = pct; notify({ type: 'MP_PROGRESS', version: VERSION, pct }); }
+    };
+    const page = await fetchIndex(f => { idx = f; report(); });
+    await cache.put(INDEX, page.clone());
+    await cache.put('./', page);
+    for(const u of OTHERS){
+      const r = await fetch(new Request(u, { cache: 'reload' }));
+      if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + u);
+      await cache.put(u, r); oth++; report();
+    }
+    notify({ type: 'MP_PROGRESS', version: VERSION, pct: 100 });
+  })());
 });
 
 self.addEventListener('activate', e => {
@@ -13,7 +58,9 @@ self.addEventListener('activate', e => {
   );
 });
 
-self.addEventListener('message', e => { if (e.data === 'SKIP_WAITING') self.skipWaiting(); });
+self.addEventListener('message', e => {
+  if(e.data === 'SKIP_WAITING' || (e.data && e.data.type === 'SKIP_WAITING')) self.skipWaiting();
+});
 
 self.addEventListener('fetch', e => {
   const req = e.request;

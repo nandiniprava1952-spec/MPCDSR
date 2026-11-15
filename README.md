@@ -21,7 +21,7 @@ Installable, mobile-friendly web app. Hosted free on GitHub Pages.
 - **Desktop Chrome/Edge:** install icon in the address bar.
 
 ## Updating
-Replace `index.html` and commit. Installed apps pick up the new version the next time they open online. If you change `sw.js` or the icons, bump `VERSION` in `sw.js` (e.g. `mpcdsr-v2`).
+Replace `index.html` and commit. Installed apps pick up the new version the next time they open online. **Every release: bump `VERSION` in `sw.js` (e.g. `mpcdsr-v32`)** - installed apps detect a new version by a change in `sw.js`, which triggers the in-app update card below.
 
 ## Notes
 - PWAs need HTTPS; GitHub Pages provides it. Opening the file directly from disk will not install.
@@ -52,3 +52,15 @@ The login screen uses a full-screen photo (mother and child at sunset), embedded
 
 ## Language
 A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interface; the choice is remembered on the device. Data, district/block/facility names and exported files stay as entered.
+
+## Install badge and Online / Offline status
+- A top-left badge cluster appears on the login/cover page: a blue **Install app** badge (hidden once installed or dismissed) and a status pill with a green **Online** dot that turns into a yellow **Offline** dot when the connection drops (checked on the browser's online/offline events and every 15 s with a small request to this site, so Wi-Fi without internet is caught too).
+- Chrome/Edge/Android use the native install prompt; iPhone Safari and other browsers show how to install when the badge is tapped.
+- After login the same badges move to the bottom-right corner.
+
+## In-app updates
+- The app checks for a new version when it opens, when you come back to it, and every 30 minutes.
+- If one exists, a card appears at the top: a progress ring with a percentage ("Downloading update..."). At 100% it becomes **Update available** with **Update** and **Later**. Later hides the card until the next check.
+- **Update** shows a spinning ring ("Installing update..."), the app restarts by itself, and "✔ Updated to the latest version" appears.
+- Nothing is swapped in until the person taps Update, so nobody loses work in the middle of data entry.
+- A new version is only offered when `VERSION` in `sw.js` has changed (see Updating above).
