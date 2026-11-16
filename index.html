@@ -3024,6 +3024,9 @@ function makeModule(containerId, opts){
     clr.addEventListener('click', ()=>{ inp.value=''; run(); inp.focus(); });
   })();
   // ---- Manual entry: add one new MDR/CDR record without re-uploading a workbook.
+  // The form follows the MPCDSR sub-centre XLSForm (mpcdsr_subcentre_report.xlsx): reporting details (area type, district,
+  // block / PHC / sub centre / village or ULB / ward / urban facility, reporter), then the MDR or CDR questions with the same
+  // choice lists, skip logic, facility pick-lists and validations.
   (function(){
     const host = document.getElementById(`${containerId}-add-rec`);
     if(!host) return;
@@ -3031,6 +3034,7 @@ function makeModule(containerId, opts){
     const id = k=>`${containerId}-ar-${k}`;
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const esc = escapeHtml;
+    const XF = {"edu": [["Illiterate", "Illiterate"], ["Primary", "Primary (up to class 5)"], ["Upper primary", "Upper primary (class 6–8)"], ["Secondary", "Secondary (class 9–10)"], ["Higher secondary", "Higher secondary (class 11–12)"], ["Graduate", "Graduate and above"]], "hrp": [["SevereAnaemia", "Severe anaemia"], ["Hypertension", "Hypertension / pre-eclampsia / eclampsia"], ["GDM", "Gestational diabetes"], ["APH", "Antepartum haemorrhage"], ["PreviousLSCS", "Previous caesarean (LSCS)"], ["BOH", "Bad obstetric history (stillbirth / abortion / neonatal death)"], ["Multiple", "Multiple pregnancy"], ["Malpresentation", "Malpresentation / malposition"], ["Teenage", "Teenage pregnancy (below 19 years)"], ["Elderly", "Elderly pregnancy (35 years and above)"], ["GrandMulti", "Grand multipara (para 5 or more)"], ["HeartDisease", "Heart disease"], ["Infection", "Infection (HIV / TB / malaria / hepatitis)"], ["Other", "Other"]], "immun": [["Complete", "Complete as per age"], ["Incomplete", "Incomplete / partial"], ["None", "Not immunised"], ["NA", "Not applicable (too young)"]], "agecat": [["Neo natal", "Neo natal (up to 28 days)"], ["Infant", "Infant (29 days – under 1 year)"], ["Child", "Child (1 – under 5 years)"]], "fgroup": [["PHC", "Primary Health Centre (PHC)"], ["CHC", "Community Health Centre (CHC)"], ["SDH", "Sub-divisional / Area hospital (SDH)"], ["DHH", "District Headquarters Hospital (DHH)"], ["MC", "Medical College & Hospital"], ["UPHC", "Urban PHC (UPHC)"], ["UHWC", "Urban Health & Wellness Centre (UHWC)"], ["AHWC", "Ayushman Arogya Mandir / AHWC"], ["SC", "Sub centre (SC)"], ["AYUSH", "AYUSH college / hospital"], ["OTHER", "Other / private facility (not in list)"]], "ulb": ["Anandapur", "Anugul", "Asika", "Athagad", "Athamallik", "Attabira", "Balangir", "Baleshwar", "Baliguda", "Balimela", "Balugaon", "Banapur", "Banki", "Barapali", "Barbil", "Bargarh", "Baripada", "Basudebpur", "Bellaguntha", "Belpahar", "Berhampur", "Bhadrak", "Bhanjanagar", "Bhawanipatna", "Bhuban", "Bhubaneswar", "Bijepur", "Binika", "Biramitrapur", "Boudhgarh", "Brajarajnagar", "Buguda", "Champua", "Chandabali", "Chhatrapur", "Chikiti", "Choudwar", "Cuttack", "Dasapalla", "Debagarh", "Dhamanagar", "Dharmagarh", "Dhenkanal", "Digapahandi", "G. Udayagiri", "Ganjam", "Gopalpur", "Gudari", "Gunupur", "Hindol", "Hinjilicut", "Jagatsinghpur", "Jajapur", "Jaleswar", "Jatani", "Jeypur", "Jharsuguda", "Joda", "Junagarh", "Kamakhyanagar", "Kantabanji", "Karanjia", "Kasinagar", "Kavisurjyanagar", "Kendrapara", "Kendujhar", "Kesinga", "Khalikote", "Khandapada", "Khariar", "Khariar Road", "Khordha", "Kochinda", "Kodala", "Konark", "Koraput", "Kotpad", "Malkangiri", "Nabarangapur", "Nayagarh", "Nilagiri", "Nimapada", "Nuapada", "Odogaon", "Padmapur", "Paradeep", "Paralakhemundi", "Patnagarh", "Pattamundai", "Phulabani", "Pipili", "Polasara", "Puri", "Purusottampur", "Rairangpur", "Rajagangapur", "Rambha", "Ranapur", "Raurkela", "Rayagada", "Redhakhol", "Remuna", "Sambalpur", "Sonapur", "Soro", "Sunabeda", "Sundargarh", "Surada", "Talcher", "Tarbha", "Titlagarh", "Tusura", "Udala", "Umarkote", "Vyasanagar"]};
     // Date of death window (local date): MDR = today and the 7 days before; CDR = today and the 3 days before.
     const BACK_DAYS = isMdr ? 7 : 3;
     const pad2 = n=>String(n).padStart(2,'0');
@@ -3039,46 +3043,77 @@ function makeModule(containerId, opts){
     const minDateStr = ()=>dateStr(-BACK_DAYS);
     const isoToDmy = iso=>{ const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3]+'-'+m[2]+'-'+m[1] : iso; };
     const inpCss = 'width:100%;padding:9px 10px;border:1px solid #8a94ac;border-radius:6px;font-size:15px;font-weight:500;line-height:1.3;box-sizing:border-box;background:#fff;color:#111827;color-scheme:light;';
-    const fld = (k,label,html,req,wide)=>`<div style="flex:${wide?'2 1 320px':'1 1 190px'};min-width:${wide?'260px':'160px'};"><label for="${id(k)}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">${label}${req?' <span style="color:#c0392b;">*</span>':''}</label>${html}</div>`;
+    // field wrapper (id f-<key> lets the skip logic show / hide the whole field)
+    const fld = (k,label,html,req,wide)=>`<div id="${id('f-'+k)}" style="flex:${wide?'2 1 320px':'1 1 190px'};min-width:${wide?'260px':'160px'};"><label for="${id(k)}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">${label}${req?' <span style="color:#c0392b;">*</span>':''}</label>${html}</div>`;
+    const head = t=>`<div style="flex:1 1 100%;min-width:100%;font-size:13px;font-weight:700;color:#1d6fb8;border-bottom:1px solid var(--border);padding:6px 0 2px;margin-top:4px;">${t}</div>`;
     const txt = (k,ph)=>`<input type="text" id="${id(k)}" placeholder="${ph||''}" autocomplete="off" style="${inpCss}">`;
+    const lst = (k,ph,dl)=>`<input type="text" id="${id(k)}" list="${id(dl)}" placeholder="${ph||''}" autocomplete="off" style="${inpCss}"><datalist id="${id(dl)}"></datalist>`;
+    const num = (k,ph,min,max,step)=>`<input type="number" id="${id(k)}" ${min!=null?`min="${min}"`:''} ${max!=null?`max="${max}"`:''} step="${step||1}" placeholder="${ph||''}" style="${inpCss}">`;
+    const dt  = (k,min,max)=>`<input type="date" id="${id(k)}" ${min?`min="${min}"`:''} ${max?`max="${max}"`:''} style="${inpCss}">`;
     const sel = (k,opts,ph)=>`<select id="${id(k)}" style="${inpCss}"><option value="">${ph||'— select —'}</option>${opts.map(o=>`<option value="${esc(Array.isArray(o)?o[0]:o)}">${esc(Array.isArray(o)?o[1]:o)}</option>`).join('')}</select>`;
     const distOpts = MDR_DISTRICTS.map(d=>[d,d]);
     const yr = new Date().getFullYear();
     const yearOpts = [yr+1,yr,yr-1,yr-2,yr-3,yr-4].map(y=>[String(y),String(y)]);
+    const PLACE_FAC = [['Public facility','Public facility'],['Private facility','Private facility'],['Home','Home'],['In transit','In transit']];
+    // facility group: Type of facility -> Name of facility (pick-list of the district) or "not in the list"
+    const facGrp = (p,tl,nl,ol)=> fld(p+'Type',tl,sel(p+'Type',XF.fgroup))+fld(p+'Name',nl,sel(p+'Name',[]))+fld(p+'Other',ol,txt(p+'Other'));
     const common =
+      head('Reporting details')+
+      fld('areaType','Area',sel('areaType',[['Rural','Rural'],['Urban','Urban']]),true)+
       fld('district','District',sel('district',distOpts),true)+
-      fld('block','Block',`<input type="text" id="${id('block')}" list="${id('blocks')}" placeholder="Block name" autocomplete="off" style="${inpCss}"><datalist id="${id('blocks')}"></datalist>`,true)+
+      fld('block','Block',lst('block','Block name','blocks'),true)+
+      fld('phcArea','PHC area (PHC)',lst('phcArea','PHC area','phcs'))+
+      fld('subCentre','Sub centre',lst('subCentre','Sub centre','scs'),true)+
+      fld('village','Village',txt('village'))+
+      fld('ulb','Urban local body (ULB / Municipality)',lst('ulb','ULB / Municipality','ulbs'),true)+
+      fld('ward','Ward',txt('ward'))+
+      fld('urbanFacility','Urban health facility (UPHC / UHWC)',lst('urbanFacility','UPHC / UHWC','ufs'),true)+
+      fld('reportedBy','Reported by (ANM / ASHA name)',txt('reportedBy'))+
+      fld('reporterMobile','Reporter mobile number',`<input type="tel" inputmode="numeric" maxlength="10" id="${id('reporterMobile')}" placeholder="10-digit mobile" style="${inpCss}">`)+
       fld('month','Reporting month',sel('month',MONTHS.map(m=>[m,m])),true)+
       fld('year','Reporting year',sel('year',yearOpts),true);
     const mdrFields =
+      head('Maternal death (MDR) details')+
       fld('deceasedName','Name of the Deceased Mother',txt('deceasedName'),true,true)+
       fld('husbandGuardian','Name &amp; address of the Husband / Guardian',txt('husbandGuardian','Name, village/address, mobile'),false,true)+
-      fld('age','Age (years)',`<input type="number" min="10" max="60" step="1" id="${id('age')}" placeholder="e.g. 26" style="${inpCss}">`)+
-      fld('date','Date of death',`<input type="date" id="${id('date')}" min="${minDateStr()}" max="${maxDateStr()}" style="${inpCss}">`,true)+
+      fld('age','Age (years)',num('age','e.g. 26',10,60))+
+      fld('education','Educational status',sel('education',XF.edu))+
+      fld('caste','Caste',sel('caste',[['GENERAL','General'],['SC','SC'],['ST','ST'],['OBC','OBC']]))+
+      fld('hb','Hb (gm/dl) – last record',num('hb','e.g. 9.5',1,20,0.1))+
+      fld('date','Date of death',dt('date',minDateStr(),maxDateStr()),true)+
       fld('place','Place of death',sel('place',[['Health Facilities','Health Facilities'],['Home','Home'],['Transit','Transit']]),true)+
       fld('period','Death period',sel('period',[['Antenatal','Antenatal'],['Intranatal','Intranatal'],['Post natal','Post natal'],['Post Abortion','Post Abortion']]),true)+
-      fld('facilityName','Name of facility',txt('facilityName'))+
-      `<div id="${id('days-wrap')}" style="flex:1 1 190px;min-width:160px;display:none;"><label for="${id('days')}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">Days: Delivery→Death</label><input type="number" min="0" id="${id('days')}" style="${inpCss}"></div>`+
+      facGrp('fac','Type of facility','Name of facility','Name of facility (not in the list)')+
+      fld('deliveryDate','Date of delivery',dt('deliveryDate',null,maxDateStr()))+
+      fld('days','Days: Delivery→Death',`<input type="number" id="${id('days')}" readonly placeholder="auto" style="${inpCss}">`)+
+      fld('deliveryAt','Delivery occurred at',sel('deliveryAt',PLACE_FAC))+
+      facGrp('del','Delivery facility type','Name of delivery facility','Name of delivery facility (not in the list)')+
+      fld('edd','Expected date of delivery (EDD)',dt('edd'))+
       fld('directCause','Direct cause of death',sel('directCause',MDR_CAUSE_LABELS.filter(c=>c!=='Others').concat(['Other']).map(c=>[c,c])),false,true)+
-      `<div id="${id('directCauseOther-wrap')}" style="flex:2 1 320px;min-width:260px;display:none;"><label for="${id('directCauseOther')}" style="font-size:13.5px;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">Specify other direct cause <span style="color:#c0392b;">*</span></label><input type="text" id="${id('directCauseOther')}" placeholder="Type the cause of death" autocomplete="off" style="${inpCss}"></div>`+
+      fld('directCauseOther','Specify other direct cause',txt('directCauseOther','Type the cause of death'),true,true)+
       fld('associatedCause','Associated cause',txt('associatedCause'),false,true)+
       fld('hrp','High risk pregnancy',sel('hrp',[['Yes','Yes'],['No','No']]))+
-      fld('hrpDetails','High risk details',txt('hrpDetails'),false,true)+
-      fld('gravida','Gravida',txt('gravida'))+fld('para','Para',txt('para'))+
-      fld('phcArea','PHC area',txt('phcArea'))+fld('subCentre','Sub centre',txt('subCentre'));
+      fld('hrpCondition','High risk condition',sel('hrpCondition',XF.hrp),false,true)+
+      fld('hrpDetails','High risk details (specify other)',txt('hrpDetails'),true,true)+
+      fld('gravida','Gravida',num('gravida','',0,20))+fld('para','Para',num('para','',0,20));
     const cdrFields =
+      head('Child death (CDR) details')+
+      fld('childName','Name of the child',txt('childName'),false,true)+
+      fld('motherName','Name of the mother',txt('motherName'),false,true)+
       fld('gender','Sex',sel('gender',[['Male','Male'],['Female','Female']]),true)+
       fld('caste','Caste',sel('caste',[['GENERAL','General'],['SC','SC'],['ST','ST'],['OBC','OBC']]))+
-      fld('place','Place of death',sel('place',[['Public facility','Public facility'],['Private facility','Private facility'],['Home','Home'],['In transit','In transit']]),true)+
-      fld('ageCategory','Age category',sel('ageCategory',[['Neo natal','Neo natal'],['Infant','Infant'],['Child','Child']]),true)+
-      fld('date','Date of death',`<input type="date" id="${id('date')}" min="${minDateStr()}" max="${maxDateStr()}" style="${inpCss}">`,false)+
-      fld('dob','Date of birth',`<input type="date" id="${id('dob')}" max="${maxDateStr()}" style="${inpCss}">`)+
-      fld('age','Age (auto from date of birth)',txt('age','Fills from date of birth'))+
-      fld('birthWeight','Birth weight (kg)',txt('birthWeight'))+
-      fld('facilityName','Name of facility',txt('facilityName'))+
+      fld('place','Place of death',sel('place',PLACE_FAC),true)+
+      facGrp('fac','Type of facility','Name of facility','Name of facility (not in the list)')+
+      fld('dob','Date of birth',dt('dob',null,maxDateStr()))+
+      fld('birthPlace','Place of birth',sel('birthPlace',PLACE_FAC))+
+      facGrp('birth','Birth facility type','Name of birth facility','Name of birth facility (not in the list)')+
+      fld('date','Date of death',dt('date',minDateStr(),maxDateStr()),false)+
+      fld('age','Age (e.g. 12 days)',txt('age','Fills from date of birth'))+
+      fld('ageCategory','Age category',sel('ageCategory',XF.agecat),true)+
+      fld('birthWeight','Birth weight (kg)',num('birthWeight','e.g. 2.5',0.3,7,0.01))+
+      fld('immunisation','Completeness of immunisation as per age',sel('immunisation',XF.immun),false,true)+
       fld('causeMajor','Probable cause of death (major)',sel('causeMajor',CDR_CAUSE_LABELS.map(c=>[c,c])),false,true)+
-      fld('causeOther','Other cause / details',txt('causeOther'),false,true)+
-      fld('phcArea','PHC area',txt('phcArea'))+fld('subCentre','Sub centre',txt('subCentre'));
+      fld('causeOther','Other cause / details',txt('causeOther'),false,true);
     if(!document.getElementById('mp-manual-entry-css')){
       const st = document.createElement('style'); st.id = 'mp-manual-entry-css';
       st.textContent = '[id$="-add-rec"] select option{color:#111827;background:#fff;font-size:15px;}'
@@ -3100,22 +3135,105 @@ function makeModule(containerId, opts){
         </div>
       </div>`;
     const $ = k=>document.getElementById(id(k));
+    const v = k=>String($(k)?$(k).value:'').trim();
     const msg = (t,err)=>{ const m=$('msg'); m.textContent=t; m.style.color = err?'#c0392b':'#1e7e34'; };
+    // ---- facility pick-lists (district -> facility master, by facility type) ----
+    const TYPE_CODES = {PHC:[1],CHC:[2],UPHC:[3],SDH:[4],DHH:[5],MC:[17],SC:[99],UHWC:[101],AHWC:[102,103,105],AYUSH:[109]};
+    const distCode = ()=> v('district') ? DISTRICT_NAME_TO_CODE[normalizeDistrict(v('district'))] : '';
+    function facNames(codes){
+      const arr = (typeof FACILITY_MASTER!=='undefined' && FACILITY_MASTER[distCode()]) || [];
+      const set = new Set(); arr.forEach(f=>{ if(codes.includes(f[2]) && f[1]) set.add(String(f[1]).trim()); });
+      return Array.from(set).sort((a,b)=>a.localeCompare(b));
+    }
+    function fillSel(k, names){
+      const el=$(k); if(!el) return; const keep = el.value;
+      el.innerHTML = '<option value="">— select —</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+      if(keep && names.includes(keep)) el.value = keep; else el.value = '';
+    }
+    function fillDl(dlId, names){ const dl=document.getElementById(id(dlId)); if(dl) dl.innerHTML = names.map(n=>`<option value="${esc(n)}"></option>`).join(''); }
+    function refreshLists(){
+      const code = distCode(), want = v('district') ? normalizeDistrict(v('district')) : '';
+      const blocks = new Set();
+      if(code) Object.keys(BLOCK_ACCESS).forEach(k=>{ const b=BLOCK_ACCESS[k]; if(b.d===code) blocks.add(b.n); });
+      let loaded = []; try{ loaded = (lineListing && lineListing.records) || []; }catch(_){ loaded = []; }   // lineListing is declared further down
+      loaded.forEach(r=>{ if((!want || normalizeDistrict(r.district)===want) && r.block && r.block!=='Other & Urban Facilities') blocks.add(r.block); });
+      fillDl('blocks', Array.from(blocks).sort());
+      fillDl('phcs', facNames(TYPE_CODES.PHC));
+      fillDl('scs', facNames(TYPE_CODES.SC));
+      fillDl('ufs', facNames(TYPE_CODES.UPHC.concat(TYPE_CODES.UHWC)));
+      fillDl('ulbs', XF.ulb);
+      ['fac','del','birth'].forEach(p=>{ if($(p+'Type')) fillFacName(p); });
+    }
+    function fillFacName(p){ const t=v(p+'Type'); fillSel(p+'Name', t && t!=='OTHER' && TYPE_CODES[t] ? facNames(TYPE_CODES[t]) : []); }
+    // ---- skip logic ----
+    const show = (k,on)=>{ const w=document.getElementById(id('f-'+k)); if(!w) return; w.style.display = on?'':'none';
+      if(!on){ const el=$(k); if(el && !el.dataset.locked){ if(el.tagName==='SELECT' || el.tagName==='INPUT') el.value=''; } } };
+    function facSync(p, mode){   // mode: 'public' (type -> name / other) | 'private' (other only) | 'none'
+      const t = v(p+'Type');
+      show(p+'Type', mode==='public');
+      show(p+'Name', mode==='public' && !!t && t!=='OTHER');
+      show(p+'Other', (mode==='public' && t==='OTHER') || mode==='private');
+    }
+    const modeOf = pl=> pl==='Public facility' ? 'public' : (pl==='Private facility' ? 'private' : 'none');
+    let busy = false;
+    function syncAll(){
+      if(busy) return; busy = true;
+      try{
+        const rural = v('areaType')==='Rural', urban = v('areaType')==='Urban';
+        ['block','phcArea','subCentre','village'].forEach(k=>show(k,rural));
+        ['ulb','ward','urbanFacility'].forEach(k=>show(k,urban));
+        if(isMdr){
+          const hf = v('place')==='Health Facilities', post = v('period')==='Post natal';
+          facSync('fac', hf && !FACILITY_LOCK ? 'public' : 'none');
+          show('deliveryDate', post); show('days', post); show('deliveryAt', post); show('edd', v('period')==='Antenatal');
+          facSync('del', post ? modeOf(v('deliveryAt')) : 'none');
+          show('directCauseOther', v('directCause')==='Other');
+          const hrpY = v('hrp')==='Yes';
+          show('hrpCondition', hrpY); show('hrpDetails', hrpY && v('hrpCondition')==='Other');
+          calcDays();
+        } else {
+          facSync('fac', FACILITY_LOCK ? 'none' : modeOf(v('place')));
+          facSync('birth', modeOf(v('birthPlace')));
+          calcAge();
+        }
+      } finally { busy = false; }
+    }
+    // MDR: days from delivery to death (auto)
+    function calcDays(){
+      if(!isMdr) return;
+      const a = v('deliveryDate'), b = v('date');
+      if(!a || !b){ $('days').value=''; return; }
+      const da = new Date(a+'T00:00:00'), db = new Date(b+'T00:00:00');
+      $('days').value = Math.round((db-da)/86400000);
+    }
+    // CDR: age (and age category) fill automatically from date of birth -> date of death (today when no date of death is given);
+    // without a date of birth they are entered by hand, as in the form.
+    function calcAge(){
+      if(isMdr) return;
+      const hasDob = !!v('dob');
+      $('age').readOnly = hasDob; $('ageCategory').disabled = hasDob;
+      if(!hasDob) return;
+      const dob = mpParseDmy($('dob').value);
+      if(!dob) return;
+      const ref = mpParseDmy($('date').value) || new Date();
+      const a = mpAgeFromDob(dob, ref);
+      if(!a){ msg('Date of birth cannot be after the date of death.', true); $('age').value=''; return; }
+      msg('');
+      $('age').value = a.text; $('ageCategory').value = a.category;
+    }
     // District: locked to the logged-in district for district users (login can happen after the page is built).
     function applyLock(){
       if(!DISTRICT_LOCK) return;
       const want = normalizeDistrict(DISTRICT_LOCK.name);
       const o = MDR_DISTRICTS.find(d=>normalizeDistrict(d)===want);
       if(o){ $('district').value = o; $('district').disabled = true; }
-      if(BLOCK_LOCK){ $('block').value = BLOCK_LOCK.name; $('block').readOnly = true; }
+      if(BLOCK_LOCK){ $('areaType').value = 'Rural'; $('areaType').disabled = true; syncAll(); $('block').value = BLOCK_LOCK.name; $('block').readOnly = true; }
       if(FACILITY_LOCK){   // facility / SNCU / NBSU login: facility and place of death are fixed (institution death: MDR = Health Facilities, CDR = Public facility)
-        $('facilityName').value = FACILITY_LOCK.name; $('facilityName').readOnly = true;
         $('place').value = isMdr ? 'Health Facilities' : 'Public facility'; $('place').disabled = true;
-        if(isMdr) $('place').dispatchEvent(new Event('change'));
       }
+      refreshLists(); syncAll();
     }
     $('toggle').addEventListener('click', ()=>{ const p=$('panel'); const open = p.style.display==='none'; p.style.display = open ? '' : 'none'; $('toggle').textContent = open ? '✕ Close' : '➕ New entry'; applyLock(); $('date').max = maxDateStr(); $('date').min = minDateStr(); if(open){ try{ p.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ p.scrollIntoView(); } } });
-    applyLock();
     // Manual entry is available to BLOCK and DISTRICT logins only (admin/state and offline sessions never see it).
     function applyAccess(){
       const ok = !!DISTRICT_LOCK;
@@ -3125,117 +3243,138 @@ function makeModule(containerId, opts){
     }
     applyAccess();
     document.addEventListener('mp-auth-ready', applyAccess);
-    // Block suggestions from the records already loaded for that district.
-    function refreshBlocks(){
-      const dl = document.getElementById(id('blocks')); if(!dl) return;
-      const want = $('district').value ? normalizeDistrict($('district').value) : '';
-      const set = new Set();
-      ((lineListing && lineListing.records) || []).forEach(r=>{ if((!want || normalizeDistrict(r.district)===want) && r.block) set.add(r.block); });
-      dl.innerHTML = Array.from(set).sort().map(b=>`<option value="${esc(b)}"></option>`).join('');
-    }
-    $('district').addEventListener('change', refreshBlocks);
-    $('block').addEventListener('focus', refreshBlocks);
-    if(isMdr){
-      const syncPeriod = ()=>{ $('days-wrap').style.display = $('period').value==='Post natal' ? '' : 'none'; };
-      $('period').addEventListener('change', syncPeriod); syncPeriod();
-      const syncPlace = ()=>{   // facility name only applies to deaths in a health facility
-        const w = $('facilityName').parentElement, hide = ['Home','Transit'].includes($('place').value);
-        w.style.display = hide ? 'none' : ''; if(hide) $('facilityName').value='';
-      };
-      $('place').addEventListener('change', syncPlace); syncPlace();
-      const syncCause = ()=>{
-        const o = $('directCause').value==='Other';
-        $('directCauseOther-wrap').style.display = o ? '' : 'none'; if(!o) $('directCauseOther').value='';
-      };
-      $('directCause').addEventListener('change', syncCause); syncCause();
-      const syncHrp = ()=>{ $('hrpDetails').disabled = $('hrp').value!=='Yes'; if($('hrp').value!=='Yes') $('hrpDetails').value=''; };
-      $('hrp').addEventListener('change', syncHrp); syncHrp();
-    }
+    // wiring
+    $('district').addEventListener('change', refreshLists);
+    ['block','subCentre','ulb'].forEach(k=>$(k).addEventListener('focus', refreshLists));
+    ['fac','del','birth'].forEach(p=>{ if($(p+'Type')) $(p+'Type').addEventListener('change', ()=>{ fillFacName(p); syncAll(); }); });
+    ['areaType','place','period','deliveryAt','birthPlace','directCause','hrp','hrpCondition'].forEach(k=>{ if($(k)) $(k).addEventListener('change', syncAll); });
+    ['deliveryDate','dob'].forEach(k=>{ if($(k)){ $(k).addEventListener('change', syncAll); $(k).addEventListener('input', syncAll); } });
     // Month/year follow the date of death (still editable afterwards); only today and the previous 7 (MDR) / 3 (CDR) days are accepted.
     $('date').addEventListener('change', ()=>{
       const dv = String($('date').value||'');
-      if(dv && (dv>maxDateStr() || dv<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' ('+BACK_DAYS+' days ago) and '+isoToDmy(maxDateStr())+' (today).', true); $('date').value=''; return; }
-      const m = dv.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return;
-      msg('');
-      $('month').value = MONTHS[+m[2]-1];
-      if(!Array.from($('year').options).some(o=>o.value===m[1])){ const o=document.createElement('option'); o.value=o.textContent=m[1]; $('year').appendChild(o); }
-      $('year').value = m[1];
-    });
-    // CDR: age (and age category) fill automatically from date of birth -> date of death (today when no date of death is given).
-    if(!isMdr){
-      const calcAge = ()=>{
-        const dob = mpParseDmy($('dob').value);
-        if(!dob){ return; }
-        const ref = mpParseDmy($('date').value) || new Date();
-        const a = mpAgeFromDob(dob, ref);
-        if(!a){ msg('Date of birth cannot be after the date of death.', true); $('age').value=''; return; }
+      if(dv && (dv>maxDateStr() || dv<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' ('+BACK_DAYS+' days ago) and '+isoToDmy(maxDateStr())+' (today).', true); $('date').value=''; syncAll(); return; }
+      const m = dv.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(m){
         msg('');
-        $('age').value = a.text; $('ageCategory').value = a.category;
-      };
-      $('dob').addEventListener('change', calcAge);
-      $('dob').addEventListener('input', calcAge);
-      $('date').addEventListener('change', calcAge);
-    }
-    const KEEP = ['district','month','year']; // kept between entries to speed up data entry
+        $('month').value = MONTHS[+m[2]-1];
+        if(!Array.from($('year').options).some(o=>o.value===m[1])){ const o=document.createElement('option'); o.value=o.textContent=m[1]; $('year').appendChild(o); }
+        $('year').value = m[1];
+      }
+      syncAll();
+    });
+    const KEEP = ['district','month','year','areaType']; // kept between entries to speed up data entry
     function resetForm(){
       host.querySelectorAll('input,select').forEach(el=>{
         if(el.id===id('toggle')) return;
         const key = el.id.replace(id(''),'');
-        if(KEEP.includes(key) || (BLOCK_LOCK && key==='block') || (FACILITY_LOCK && (key==='facilityName' || key==='place'))) return;
-        if(el.tagName==='SELECT') el.value=''; else el.value='';
+        if(KEEP.includes(key) || (BLOCK_LOCK && key==='block') || (FACILITY_LOCK && key==='place')) return;
+        el.value='';
       });
-      if(isMdr){ $('days-wrap').style.display='none'; $('hrpDetails').disabled=true; $('place').dispatchEvent(new Event('change')); $('directCause').dispatchEvent(new Event('change')); }
+      syncAll();
     }
     $('reset').addEventListener('click', ()=>{ resetForm(); msg(''); });
+    // ---- WhatsApp alert text (same layout as the form's alert) ----
+    const dmy = iso=>{ const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3]+'-'+m[2]+'-'+m[1] : (iso||''); };
+    const dash = x=> (x===undefined||x===null||String(x)==='') ? '-' : x;
+    function areaText(r){
+      const a = r.areaType==='Urban' ? [r.ward, r.ulb] : [r.subCentre, r.village, r.block];
+      return a.concat([r.district]).filter(Boolean).join(', ');
+    }
+    function waText(r){
+      const L = [];
+      if(isMdr){
+        L.push('🚨 *MATERNAL DEATH ALERT (MDR)*', 'Name: '+dash(r.deceasedName), 'Age: '+dash(r.age), 'Date of death: '+dash(r.date), 'Death period: '+dash(r.period)
+          ,'Place of death: '+dash(r.place)+(r.facilityName?' ('+r.facilityName+')':''));
+        if(r.period==='Post natal') L.push('Delivery: '+dash(r.deliveryAt)+(r.deliveryFacilityName?' ('+r.deliveryFacilityName+')':'')+', Date '+dash(r.deliveryDate)+', Days to death '+dash(r.daysDeliveryToDeath));
+        if(r.period==='Antenatal') L.push('EDD: '+dash(r.edd));
+        L.push('Direct cause: '+dash(r.directCause), 'High risk: '+dash(r.hrp)+(r.hrp==='Yes'&&r.hrpDetails?' - '+r.hrpDetails:''));
+      } else {
+        L.push('🚨 *CHILD DEATH ALERT (CDR)*', 'Child: '+dash(r.childName)+', Mother: '+dash(r.motherName), 'Sex: '+dash(r.gender)+', Age: '+dash(r.age)+' ('+dash(r.ageCategory)+')', 'Date of death: '+dash(r.date)
+          ,'Place of death: '+dash(r.place)+(r.facilityName?' ('+r.facilityName+')':''), 'Place of birth: '+dash(r.birthPlace)+(r.birthFacilityName?' ('+r.birthFacilityName+')':'')
+          ,'Birth weight: '+dash(r.birthWeight)+' kg', 'Immunisation: '+dash(r.immunisation), 'Probable cause: '+dash(r.causeMajor)+(r.causeOther?' - '+r.causeOther:''));
+      }
+      L.push('Area: '+areaText(r), 'Reported by: '+dash(r.reportedBy)+' '+dash(r.reporterMobile));
+      return L.join('\n');
+    }
+    // final facility name of a group: type "other" / private -> typed name, otherwise the picked name
+    const facFinal = (p,mode)=> mode==='public' ? (v(p+'Type')==='OTHER' ? v(p+'Other') : v(p+'Name')) : (mode==='private' ? v(p+'Other') : '');
+    const typeLabel = t=>{ const o = XF.fgroup.find(x=>x[0]===t); return o ? o[1] : ''; };
     $('save').addEventListener('click', ()=>{
-      const v = k=>String($(k)?$(k).value:'').trim();
       if(!DISTRICT_LOCK){ msg('New entries can be added from a district or block login only.', true); return; }
-      const need = isMdr ? ['district','block','month','year','deceasedName','date','place','period']
-                         : ['district','block','month','year','gender','place','ageCategory'];
-      const labels = {district:'District',block:'Block',month:'Reporting month',year:'Reporting year',deceasedName:'Name of the Deceased Mother',date:'Date of death',place:'Place of death',period:'Death period',gender:'Sex',ageCategory:'Age category'};
+      const rural = v('areaType')==='Rural';
+      const need = ['areaType','district','month','year'].concat(rural ? ['block','subCentre'] : ['ulb','urbanFacility'])
+        .concat(isMdr ? ['deceasedName','date','place','period'] : ['gender','place','ageCategory']);
+      const labels = {areaType:'Area',district:'District',block:'Block',subCentre:'Sub centre',ulb:'Urban local body',urbanFacility:'Urban health facility',month:'Reporting month',year:'Reporting year',deceasedName:'Name of the Deceased Mother',date:'Date of death',place:'Place of death',period:'Death period',gender:'Sex',ageCategory:'Age category'};
       const maxS = maxDateStr();
       if(v('date') && (v('date')>maxS || v('date')<minDateStr())){ msg('Date of death must be between '+isoToDmy(minDateStr())+' ('+BACK_DAYS+' days ago) and '+isoToDmy(maxS)+' (today).', true); $('date').focus(); return; }
-      if(!isMdr && v('dob')){
-        const dob = mpParseDmy(v('dob')), dod = v('date') ? mpParseDmy(v('date')) : null;
-        if(dob && dod && dob>dod){ msg('Date of birth cannot be after the date of death.', true); $('dob').focus(); return; }
-        if(dob && dob>new Date()){ msg('Date of birth cannot be in the future.', true); $('dob').focus(); return; }
-      }
-      if(isMdr && v('directCause')==='Other' && !v('directCauseOther')){ msg('Please specify the other direct cause of death.', true); $('directCauseOther').focus(); return; }
       const miss = need.filter(k=>!v(k));
       if(miss.length){ msg('Please fill: '+miss.map(k=>labels[k]).join(', '), true); const el=$(miss[0]); if(el) el.focus(); return; }
+      if(v('reporterMobile') && !/^[6-9][0-9]{9}$/.test(v('reporterMobile'))){ msg('Reporter mobile number must be 10 digits starting with 6, 7, 8 or 9.', true); $('reporterMobile').focus(); return; }
+      const rng = (k,lo,hi,name)=>{ if(v(k)!=='' && (isNaN(+v(k)) || +v(k)<lo || +v(k)>hi)){ msg(name+' must be between '+lo+' and '+hi+'.', true); $(k).focus(); return true; } return false; };
+      if(isMdr){
+        if(rng('age',10,60,'Age') || rng('hb',1,20,'Hb') || rng('gravida',0,20,'Gravida') || rng('para',0,20,'Para')) return;
+        if(v('deliveryDate') && (v('deliveryDate')>maxS || (v('date') && v('deliveryDate')>v('date')))){ msg('Date of delivery cannot be after the date of death or in the future.', true); $('deliveryDate').focus(); return; }
+        if(v('directCause')==='Other' && !v('directCauseOther')){ msg('Please specify the other direct cause of death.', true); $('directCauseOther').focus(); return; }
+        if(v('hrp')==='Yes' && v('hrpCondition')==='Other' && !v('hrpDetails')){ msg('Please give the high risk details (other).', true); $('hrpDetails').focus(); return; }
+      } else {
+        if(rng('birthWeight',0.3,7,'Birth weight')) return;
+        if(v('dob')){
+          const dob = mpParseDmy(v('dob')), dod = v('date') ? mpParseDmy(v('date')) : null;
+          if(dob && dod && dob>dod){ msg('Date of birth cannot be after the date of death.', true); $('dob').focus(); return; }
+          if(dob && dob>new Date()){ msg('Date of birth cannot be in the future.', true); $('dob').focus(); return; }
+        }
+      }
       if(BLOCK_LOCK && !blockSame(v('block'), BLOCK_LOCK.name)){ msg('This login can only add records for '+BLOCK_LOCK.name+' block.', true); return; }
       { const mi = MONTHS.indexOf(v('month')), yy = +v('year');
         if(mi>=0 && yy && (yy+'-'+pad2(mi+1)+'-01')>maxS){ msg('Reporting month cannot be after the month of '+isoToDmy(maxS)+' (today).', true); return; } }
       if(DISTRICT_LOCK && normalizeDistrict(v('district'))!==normalizeDistrict(DISTRICT_LOCK.name)){ msg('This login can only add records for '+DISTRICT_LOCK.name+'.', true); return; }
+      // reporting details common to MDR and CDR
+      const base = {
+        district: normalizeDistrict(v('district')), areaType: v('areaType'),
+        block: rural ? v('block') : 'Other & Urban Facilities', phcArea: rural ? v('phcArea') : '', subCentre: rural ? v('subCentre') : '', village: rural ? v('village') : '',
+        ulb: rural ? '' : v('ulb'), ward: rural ? '' : v('ward'), urbanFacility: rural ? '' : v('urbanFacility'),
+        reportedBy: v('reportedBy'), reporterMobile: v('reporterMobile'),
+        month: v('month'), year: v('year')
+      };
       let rec;
       if(isMdr){
-        const d = v('date').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        const dateStr = d ? d[3]+'-'+d[2]+'-'+d[1] : v('date');
-        const hrp = v('hrp');
-        rec = {
-          district: normalizeDistrict(v('district')), block: v('block'), phcArea: v('phcArea'), subCentre: v('subCentre'),
-          month: v('month'), year: v('year'), date: dateStr,
+        const dateStr = isoToDmy(v('date'));
+        const hrp = v('hrp'), hf = v('place')==='Health Facilities', post = v('period')==='Post natal';
+        const facMode = FACILITY_LOCK ? '' : (hf ? 'public' : '');
+        const delMode = post ? modeOf(v('deliveryAt')) : 'none';
+        rec = Object.assign(base, {
+          date: dateStr,
           place: normalizePlaceValue(FACILITY_LOCK ? 'Health Facilities' : v('place')), period: normalizePeriodValue(v('period')),
-          directCause: v('directCause')==='Other' ? v('directCauseOther') : v('directCause'), associatedCause: v('associatedCause'), facilityName: FACILITY_LOCK ? FACILITY_LOCK.name : (['Home','Transit'].includes(v('place')) ? '' : v('facilityName')),
-          daysDeliveryToDeath: v('period')==='Post natal' ? v('days') : '',
-          hrp: hrp, hrpDetails: isHrpYes(hrp) ? v('hrpDetails') : '',
+          directCause: v('directCause')==='Other' ? v('directCauseOther') : v('directCause'), associatedCause: v('associatedCause'),
+          facilityName: FACILITY_LOCK ? FACILITY_LOCK.name : (hf ? facFinal('fac','public') : ''), facilityType: hf && !FACILITY_LOCK ? typeLabel(v('facType')) : '',
+          deliveryDate: post ? isoToDmy(v('deliveryDate')) : '', daysDeliveryToDeath: post ? v('days') : '',
+          deliveryAt: post ? v('deliveryAt') : '', deliveryFacilityName: post ? facFinal('del',delMode) : '',
+          edd: v('period')==='Antenatal' ? isoToDmy(v('edd')) : '',
+          hrp: hrp, hrpCondition: isHrpYes(hrp) ? ((XF.hrp.find(x=>x[0]===v('hrpCondition'))||[])[1]||'') : '',
+          hrpDetails: isHrpYes(hrp) ? (v('hrpCondition')==='Other' ? v('hrpDetails') : ((XF.hrp.find(x=>x[0]===v('hrpCondition'))||[])[1]||'')) : '',
           gravida: v('gravida'), para: v('para'),
           deceasedName: v('deceasedName'), husbandGuardian: v('husbandGuardian'), age: v('age'), nameCombined: '',
+          education: ((XF.edu.find(x=>x[0]===v('education'))||[])[1]||''), caste: v('caste'), hb: v('hb'),
           entrySource: 'Manual entry'
-        };
+        });
         const nk = x=>String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
         const dup = ((lineListing&&lineListing.records)||[]).some(r=>normalizeDistrict(r.district)===rec.district && nk(r.deceasedName)===nk(rec.deceasedName) && String(r.date||'').trim()===rec.date);
         if(dup && !confirm('A record for the same mother, district and date of death already exists. Add it anyway?')) return;
       } else {
-        rec = {
-          district: normalizeDistrict(v('district')), block: v('block'), phcArea: v('phcArea'), subCentre: v('subCentre'),
-          month: v('month'), year: v('year'), gender: v('gender'), caste: v('caste'),
-          place: FACILITY_LOCK ? 'Public facility' : v('place'), facilityName: FACILITY_LOCK ? FACILITY_LOCK.name : v('facilityName'), causeMajor: v('causeMajor'), causeOther: v('causeOther'),
-          ageCategory: v('ageCategory'), age: v('age'), dob: v('dob') ? isoToDmy(v('dob')) : '', birthWeight: v('birthWeight'),
+        const pl = FACILITY_LOCK ? 'Public facility' : v('place'), pm = FACILITY_LOCK ? 'none' : modeOf(pl), bm = modeOf(v('birthPlace'));
+        rec = Object.assign(base, {
+          childName: v('childName'), motherName: v('motherName'), gender: v('gender'), caste: v('caste'),
+          place: pl, facilityName: FACILITY_LOCK ? FACILITY_LOCK.name : facFinal('fac',pm), facilityType: pm==='public' ? typeLabel(v('facType')) : '',
+          birthPlace: v('birthPlace'), birthFacilityName: facFinal('birth',bm),
+          causeMajor: v('causeMajor'), causeOther: v('causeOther'),
+          ageCategory: v('ageCategory') || (v('dob') ? ($('ageCategory').value) : ''), age: v('age'), dob: v('dob') ? isoToDmy(v('dob')) : '', birthWeight: v('birthWeight'),
+          immunisation: ((XF.immun.find(x=>x[0]===v('immunisation'))||[])[1]||''),
           date: v('date') ? isoToDmy(v('date')) : '',
           entrySource: 'Manual entry'
-        };
+        });
       }
+      // readable copy for the WhatsApp text (the stored record keeps the dashboard's normalised values)
+      const waRec = Object.assign({}, rec, {district: v('district'), place: FACILITY_LOCK ? (isMdr?'Health Facilities':'Public facility') : v('place'), period: v('period')});
       if(!lineListing || !lineListing.records){ lineListing = {sheetName:'Manual entry', records:[]}; }
       lineListing.records.push(rec);
       const fn = document.getElementById(`${containerId}-fname`);
@@ -3243,10 +3382,13 @@ function makeModule(containerId, opts){
       lineListingRebuildAndRender();
       const si = document.getElementById(`${containerId}-rec-search-input`); if(si && si.value) si.dispatchEvent(new Event('input'));
       resetForm();
-      msg('Record added ('+lineListing.records.length.toLocaleString()+' loaded). Click ☁ Save records to cloud to keep it.');
+      const m = $('msg'); m.style.color = '#1e7e34';
+      m.innerHTML = esc('Record added ('+lineListing.records.length.toLocaleString()+' loaded). Click ☁ Save records to cloud to keep it.')
+        + ' <a href="https://wa.me/?text='+encodeURIComponent(waText(waRec))+'" target="_blank" rel="noopener" style="font-weight:700;color:#1d6fb8;white-space:nowrap;">📲 Send WhatsApp alert</a>';
       document.dispatchEvent(new CustomEvent('mp-rec-changed',{detail:containerId}));
-      refreshBlocks();
+      refreshLists();
     });
+    refreshLists(); syncAll();
   })();
   const cloudRow = document.getElementById(`${containerId}-cloud-row`);
   const cloudSaveBtn = document.getElementById(`${containerId}-cloud-save`);
@@ -6384,7 +6526,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 </script>
 <script>
 (function(){
-  var DICT = {"Downloading update…": "ଅପଡେଟ୍ ଡାଉନଲୋଡ୍ ହେଉଛି…", "Update available": "ଅପଡେଟ୍ ଉପଲବ୍ଧ", "Update": "ଅପଡେଟ୍", "Later": "ପରେ", "Installing update…": "ଅପଡେଟ୍ ଇନଷ୍ଟଲ୍ ହେଉଛି…", "Updated to the latest version": "ସର୍ବଶେଷ ସଂସ୍କରଣକୁ ଅପଡେଟ୍ ହୋଇଗଲା", "Online": "ଅନଲାଇନ୍", "Offline": "ଅଫଲାଇନ୍", "Install app": "ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "MPCDSR Dashboard": "MPCDSR ଡ୍ୟାସବୋର୍ଡ", "Select your district (and your block or facility, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.": "ଆପଣଙ୍କ ଜିଲ୍ଲା (ଏବଂ ଆପଣଙ୍କର ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା ଲଗଇନ୍ ଥିଲେ ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା) ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ। ଆପଣ କେବଳ ନିଜ ଜିଲ୍ଲା, ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥାର ରେକର୍ଡ ଦେଖିପାରିବେ।", "Show": "ଦେଖାନ୍ତୁ", "Hide": "ଲୁଚାନ୍ତୁ", "Open dashboard": "ଡ୍ୟାସବୋର୍ଡ ଖୋଲନ୍ତୁ", "Use offline (no cloud)": "ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ନାହିଁ)", "Viewing:": "ଦେଖୁଛନ୍ତି:", "Facility logins": "ସଂସ୍ଥା ଲଗଇନ୍", "Log out": "ଲଗ୍ ଆଉଟ୍", "Maternal & Child Death Review — Dashboard": "ମାତୃ ଓ ଶିଶୁ ମୃତ୍ୟୁ ସମୀକ୍ଷା — ଡ୍ୟାସବୋର୍ଡ", "Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.": "ଜିଲ୍ଲାୱାରୀ ଧାରା, କାରଣ ଓ ରିପୋର୍ଟିଂ ସମ୍ପୂର୍ଣ୍ଣତା ଦେଖିବା ପାଇଁ MDR ଲାଇନ୍-ଲିଷ୍ଟିଂ ୱାର୍କବୁକ୍ ଏବଂ/କିମ୍ବା CDR ସାରାଂଶ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "MDR (Maternal Deaths)": "MDR (ମାତୃ ମୃତ୍ୟୁ)", "CDR (Child Deaths)": "CDR (ଶିଶୁ ମୃତ୍ୟୁ)", "You are offline - showing the saved app. Cloud records need a connection.": "ଆପଣ ଅଫଲାଇନ୍ ଅଛନ୍ତି - ସେଭ୍ ହୋଇଥିବା ଆପ୍ ଦେଖାଯାଉଛି। କ୍ଲାଉଡ୍ ରେକର୍ଡ ପାଇଁ ଇଣ୍ଟରନେଟ୍ ଦରକାର।", "Install app": "ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Passcode": "ପାସକୋଡ୍", "Show passcode": "ପାସକୋଡ୍ ଦେଖାନ୍ତୁ", "Hide passcode": "ପାସକୋଡ୍ ଲୁଚାନ୍ତୁ", "Dismiss": "ବନ୍ଦ କରନ୍ତୁ", "Install MPCDSR app": "MPCDSR ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Create facility logins (SNCU/NBSU and all facilities) for this district": "ଏହି ଜିଲ୍ଲା ପାଇଁ ସଂସ୍ଥା ଲଗଇନ୍ ତିଆରି କରନ୍ତୁ (SNCU/NBSU ଓ ସମସ୍ତ ସଂସ୍ଥା)", "Select State / District…": "ରାଜ୍ୟ / ଜିଲ୍ଲା ବାଛନ୍ତୁ…", "Block / Facility (leave blank for district login)": "ବ୍ଲକ୍ / ସଂସ୍ଥା (ଜିଲ୍ଲା ଲଗଇନ୍ ପାଇଁ ଖାଲି ରଖନ୍ତୁ)", "SNCU / NBSU (leave blank if not an SNCU/NBSU)": "SNCU / NBSU (SNCU/NBSU ନହେଲେ ଖାଲି ରଖନ୍ତୁ)", "State / Admin (all districts)": "ରାଜ୍ୟ / ଆଡମିନ୍ (ସମସ୍ତ ଜିଲ୍ଲା)", "District login (all blocks)": "ଜିଲ୍ଲା ଲଗଇନ୍ (ସମସ୍ତ ବ୍ଲକ୍)", "All districts (State)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ)", "Offline mode (no cloud) — data stays on this device": "ଅଫଲାଇନ୍ ମୋଡ୍ (କ୍ଲାଉଡ୍ ନାହିଁ) — ତଥ୍ୟ ଏହି ଡିଭାଇସ୍‌ରେ ରହିବ", "Save records to cloud": "ରେକର୍ଡ କ୍ଲାଉଡ୍‌ରେ ସେଭ୍ କରନ୍ତୁ", "Load latest": "ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ", "Delete cloud records": "କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରନ୍ତୁ", "Records": "ରେକର୍ଡ", "Click to upload": "ଅପଲୋଡ୍ କରିବାକୁ କ୍ଲିକ୍ କରନ୍ତୁ", "workbook (.xlsx)": "ୱାର୍କବୁକ୍ (.xlsx)", "No file selected": "କୌଣସି ଫାଇଲ୍ ବଛାଯାଇନାହିଁ", "aggregate workbook": "ସାରାଂଶ ୱାର୍କବୁକ୍", "raw line-listing": "ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ", "Optional:": "ବୈକଳ୍ପିକ:", "District/Month-wise Delivery data": "ଜିଲ୍ଲା/ମାସ ଅନୁସାରେ ପ୍ରସବ ତଥ୍ୟ", "Year": "ବର୍ଷ", "All Years": "ସମସ୍ତ ବର୍ଷ", "Duration: From": "ଅବଧି: ଠାରୁ", "To": "ପର୍ଯ୍ୟନ୍ତ", "Month": "ମାସ", "All Districts (state total)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ ମୋଟ)", "All Blocks": "ସମସ୍ତ ବ୍ଲକ୍", "District": "ଜିଲ୍ଲା", "Block": "ବ୍ଲକ୍", "Download XLSX + records (this month)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ଏହି ମାସ)", "Download XLSX + records (all months)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ସମସ୍ତ ମାସ)", "Download XLSX + records (block-wise, month-wise)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ବ୍ଲକ୍-ଅନୁସାରେ, ମାସ-ଅନୁସାରେ)", "Deceased list for SamMpurna (ANC)": "ସମ୍ପୂର୍ଣ୍ଣା (ANC) ପାଇଁ ମୃତକଙ୍କ ତାଲିକା", "Clear": "ଖାଲି କରନ୍ତୁ", "Upload a workbook to see the dashboard.": "ଡ୍ୟାସବୋର୍ଡ ଦେଖିବାକୁ ଏକ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "Upload the line-listing (or load saved records from the cloud) to search records.": "ରେକର୍ଡ ଖୋଜିବା ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ (କିମ୍ବା କ୍ଲାଉଡ୍‌ରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଲୋଡ୍ କରନ୍ତୁ)।", "No matching records in the line-listing for this selection": "ଏହି ଚୟନ ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂରେ ମେଳ ଖାଉଥିବା ରେକର୍ଡ ନାହିଁ", "Name of the Deceased Mother": "ମୃତ ମାତାଙ୍କ ନାମ", "Name & address of the Husband / Guardian": "ସ୍ୱାମୀ / ଅଭିଭାବକଙ୍କ ନାମ ଓ ଠିକଣା", "Age": "ବୟସ", "Date of death": "ମୃତ୍ୟୁ ତାରିଖ", "Place": "ସ୍ଥାନ", "Death period": "ମୃତ୍ୟୁ ସମୟକାଳ", "Direct cause": "ସିଧାସଳଖ କାରଣ", "Associated cause": "ସହଯୋଗୀ କାରଣ", "Name of facility": "ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ", "Days: Delivery→Death": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ", "Days: Delivery→Death (Post natal)": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ (ପ୍ରସବୋତ୍ତର)", "High risk pregnancy": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା", "Risk details": "ବିପଦର ବିବରଣୀ", "Gravida": "ଗ୍ରାଭିଡା", "Para": "ପାରା", "PHC Area": "PHC ଅଞ୍ଚଳ", "Sub Centre": "ଉପକେନ୍ଦ୍ର", "Reporting month/year": "ରିପୋର୍ଟିଂ ମାସ/ବର୍ଷ", "Gender": "ଲିଙ୍ଗ", "Caste": "ଜାତି", "Place of death": "ମୃତ୍ୟୁ ସ୍ଥାନ", "Date of birth": "ଜନ୍ମ ତାରିଖ", "Age category": "ବୟସ ବର୍ଗ", "Birth weight (Kg)": "ଜନ୍ମ ଓଜନ (କିଗ୍ରା)", "Probable cause (major)": "ସମ୍ଭାବ୍ୟ କାରଣ (ମୁଖ୍ୟ)", "Probable cause (other)": "ସମ୍ଭାବ୍ୟ କାରଣ (ଅନ୍ୟ)", "Specify other direct cause": "ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ", "New entry": "ନୂଆ ଏଣ୍ଟ୍ରି", "Add record": "ରେକର୍ଡ ଯୋଡ଼ନ୍ତୁ", "Clear form": "ଫର୍ମ ଖାଲି କରନ୍ତୁ", "View": "ଦେଖନ୍ତୁ", "Edit": "ସମ୍ପାଦନ", "Close": "ବନ୍ଦ କରନ୍ତୁ", "— select —": "— ବାଛନ୍ତୁ —", "Save changes": "ପରିବର୍ତ୍ତନ ସେଭ୍ କରନ୍ତୁ", "Cancel": "ବାତିଲ୍", "No records loaded yet — upload a line-listing or use ☁ Load latest.": "ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ରେକର୍ଡ ଲୋଡ୍ ହୋଇନାହିଁ — ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ କିମ୍ବା ☁ ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ ବ୍ୟବହାର କରନ୍ତୁ।", "Total deaths": "ମୋଟ ମୃତ୍ୟୁ", "Total death": "ମୋଟ ମୃତ୍ୟୁ", "Facility deaths": "ସଂସ୍ଥାରେ ମୃତ୍ୟୁ", "Home deaths": "ଘରେ ମୃତ୍ୟୁ", "Transit deaths": "ରାସ୍ତାରେ ମୃତ୍ୟୁ", "Male": "ପୁରୁଷ", "Female": "ମହିଳା", "Neonatal (0-28 days)": "ନବଜାତ (0-28 ଦିନ)", "Infant": "ଶିଶୁ", "Child": "ପିଲା", "Other cause": "ଅନ୍ୟ କାରଣ", "HRP deaths": "HRP ମୃତ୍ୟୁ", "Non-HRP deaths": "ଅଣ-HRP ମୃତ୍ୟୁ", "Antenatal deaths": "ପ୍ରସବପୂର୍ବ ମୃତ୍ୟୁ", "Intranatal deaths": "ପ୍ରସବକାଳୀନ ମୃତ୍ୟୁ", "Post natal deaths": "ପ୍ରସବୋତ୍ତର ମୃତ୍ୟୁ", "Post Abortion deaths": "ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ ମୃତ୍ୟୁ", "Total deliveries (from Delivery data upload)": "ମୋଟ ପ୍ରସବ (ପ୍ରସବ ତଥ୍ୟ ଅପଲୋଡ୍‌ରୁ)", "Total (All Months)": "ମୋଟ (ସମସ୍ତ ମାସ)", "Types of High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP) ର ପ୍ରକାର", "(click a card to see the matching records)": "(ମେଳ ଖାଉଥିବା ରେକର୍ଡ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Place of death breakdown": "ମୃତ୍ୟୁ ସ୍ଥାନ ଅନୁସାରେ ବିଭାଜନ", "Age-wise breakdown": "ବୟସ ଅନୁସାରେ ବିଭାଜନ", "Cause of death breakdown": "ମୃତ୍ୟୁ କାରଣ ଅନୁସାରେ ବିଭାଜନ", "(click a card to see the district-wise split)": "(ଜିଲ୍ଲା ଅନୁସାରେ ବିଭାଜନ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Death period breakdown (Antenatal / Intranatal / Post natal / Post Abortion)": "ମୃତ୍ୟୁ ସମୟକାଳ ଅନୁସାରେ ବିଭାଜନ (ପ୍ରସବପୂର୍ବ / ପ୍ରସବକାଳୀନ / ପ୍ରସବୋତ୍ତର / ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ)", "District-wise comparison": "ଜିଲ୍ଲା ଅନୁସାରେ ତୁଳନା", "Metric": "ମାପକ", "Sort": "କ୍ରମ", "High → Low": "ଅଧିକରୁ କମ୍", "A → Z": "A → Z", "Block-wise comparison": "ବ୍ଲକ୍ ଅନୁସାରେ ତୁଳନା", "(from line-listing upload — select a District above to view — click a block card to see its matching records)": "(ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍‌ରୁ — ଦେଖିବାକୁ ଉପରେ ଜିଲ୍ଲା ବାଛନ୍ତୁ — ମେଳ ଖାଉଥିବା ରେକର୍ଡ ପାଇଁ ବ୍ଲକ୍ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Breakdown": "ବିଭାଜନ", "Columns to compare (pick 2+)": "ତୁଳନା ପାଇଁ ସ୍ତମ୍ଭ (2 ବା ଅଧିକ ବାଛନ୍ତୁ)", "Month-wise total deaths": "ମାସ ଅନୁସାରେ ମୋଟ ମୃତ୍ୟୁ", "Quarter-wise comparison": "ତ୍ରୈମାସିକ ଅନୁସାରେ ତୁଳନା", "Trend across months": "ମାସ ମାସ ଧାରା", "Metric label to trend (matched by name across month sheets)": "ଧାରା ପାଇଁ ମାପକ ନାମ (ମାସ ସିଟ୍ ମଧ୍ୟରେ ନାମ ଅନୁସାରେ ମେଳ)", "Build trend": "ଧାରା ତିଆରି କରନ୍ତୁ", "Full data table": "ସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ ତାଲିକା", "Cause of death columns": "ମୃତ୍ୟୁ କାରଣ ସ୍ତମ୍ଭ", "Place of death columns": "ମୃତ୍ୟୁ ସ୍ଥାନ ସ୍ତମ୍ଭ", "Age not stated": "ବୟସ ଉଲ୍ଲେଖ ନାହିଁ", "Upload the optional raw line-listing to see individual records here.": "ଏଠାରେ ବ୍ୟକ୍ତିଗତ ରେକର୍ଡ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ।", "View records": "ରେକର୍ଡ ଦେଖନ୍ତୁ", "No HRP records for this selection": "ଏହି ଚୟନ ପାଇଁ କୌଣସି HRP ରେକର୍ଡ ନାହିଁ", "No districts reported this age group": "ଏହି ବୟସ ବର୍ଗ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/age group": "ଏହି ଜିଲ୍ଲା/ବୟସ ବର୍ଗ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "No districts reported this cause": "ଏହି କାରଣ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/cause": "ଏହି ଜିଲ୍ଲା/କାରଣ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "Upload the optional raw line-listing to see this breakdown": "ଏହି ବିଭାଜନ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ", "Districts / rows": "ଜିଲ୍ଲା / ଧାଡ଼ି", "Blocks (from line-listing)": "ବ୍ଲକ୍ (ଲାଇନ୍-ଲିଷ୍ଟିଂରୁ)", "Institutional deliveries": "ସଂସ୍ଥାଗତ ପ୍ରସବ", "Home deliveries": "ଘରୋଇ ପ୍ରସବ", "Non-HRP": "ଅଣ-HRP", "High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP)", "< 1 month": "< 1 ମାସ", "1–3 months": "1–3 ମାସ", "3–12 months": "3–12 ମାସ", "Incorrect passcode.": "ଭୁଲ୍ ପାସକୋଡ୍।", "Please select your district.": "ଦୟାକରି ଆପଣଙ୍କ ଜିଲ୍ଲା ବାଛନ୍ତୁ।", "Enter your block passcode.": "ଆପଣଙ୍କ ବ୍ଲକ୍ ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Enter your facility passcode.": "ଆପଣଙ୍କ ସଂସ୍ଥାର ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Checking…": "ଯାଞ୍ଚ ହେଉଛି…", "Block login not found.": "ବ୍ଲକ୍ ଲଗଇନ୍ ମିଳିଲା ନାହିଁ।", "Checking previously saved records...": "ପୂର୍ବରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "Checking cloud for records...": "କ୍ଲାଉଡ୍‌ରେ ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "No cloud records to delete.": "ଡିଲିଟ୍ କରିବାକୁ କ୍ଲାଉଡ୍ ରେକର୍ଡ ନାହିଁ।", "Delete cancelled.": "ଡିଲିଟ୍ ବାତିଲ୍ ହେଲା।", "Load a file first.": "ପ୍ରଥମେ ଏକ ଫାଇଲ୍ ଲୋଡ୍ କରନ୍ତୁ।", "Name of the Deceased Mother is required.": "ମୃତ ମାତାଙ୍କ ନାମ ଆବଶ୍ୟକ।", "Block is required.": "ବ୍ଲକ୍ ଆବଶ୍ୟକ।", "Date of birth must be dd-mm-yyyy.": "ଜନ୍ମ ତାରିଖ dd-mm-yyyy ଫର୍ମାଟରେ ହେବା ଆବଶ୍ୟକ।", "Date of birth cannot be in the future.": "ଜନ୍ମ ତାରିଖ ଭବିଷ୍ୟତରେ ହୋଇପାରିବ ନାହିଁ।", "Date of birth cannot be after the date of death.": "ଜନ୍ମ ତାରିଖ ମୃତ୍ୟୁ ତାରିଖ ପରେ ହୋଇପାରିବ ନାହିଁ।", "Please specify the other direct cause of death.": "ଦୟାକରି ମୃତ୍ୟୁର ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ।", "Facility logins add child death (CDR) records only.": "ସଂସ୍ଥା ଲଗଇନ୍ କେବଳ ଶିଶୁ ମୃତ୍ୟୁ (CDR) ରେକର୍ଡ ଯୋଡ଼ିପାରିବ।", "Block and facility logins cannot delete cloud records.": "ବ୍ଲକ୍ ଏବଂ ସଂସ୍ଥା ଲଗଇନ୍ କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରିପାରିବେ ନାହିଁ।", "Cloud save failed": "କ୍ଲାଉଡ୍ ସେଭ୍ ବିଫଳ ହେଲା", "Encryption is not available in this browser window. Use Chrome or Edge.": "ଏହି ବ୍ରାଉଜର୍ ୱିଣ୍ଡୋରେ ଏନକ୍ରିପସନ୍ ଉପଲବ୍ଧ ନାହିଁ। Chrome କିମ୍ବା Edge ବ୍ୟବହାର କରନ୍ତୁ।", "Facility logins are created from a DISTRICT login (the district passcode is needed to open the cloud for facility users).": "ସଂସ୍ଥା ଲଗଇନ୍ ଜିଲ୍ଲା ଲଗଇନ୍‌ରୁ ତିଆରି ହୁଏ (ସଂସ୍ଥା ଉପଭୋକ୍ତାଙ୍କ ପାଇଁ କ୍ଲାଉଡ୍ ଖୋଲିବାକୁ ଜିଲ୍ଲା ପାସକୋଡ୍ ଦରକାର)।", "Enter or generate at least one facility passcode.": "ଅତିକମରେ ଗୋଟିଏ ସଂସ୍ଥା ପାସକୋଡ୍ ଦିଅନ୍ତୁ କିମ୍ବା ତିଆରି କରନ୍ତୁ।", "Each facility needs a different passcode.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ ଭିନ୍ନ ପାସକୋଡ୍ ଦରକାର।", "This is not a valid passcode list (needs District, Type, Facility code, Facility, Passcode).": "ଏହା ଏକ ବୈଧ ପାସକୋଡ୍ ତାଲିକା ନୁହେଁ (District, Type, Facility code, Facility, Passcode ଦରକାର)।", "Each facility (SNCU / NBSU, CHC, PHC, DHH, ...) gets its own passcode (6+ characters) and sees only its own CDR records.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥା (SNCU / NBSU, CHC, PHC, DHH, ...) ନିଜର ପାସକୋଡ୍ (6+ ଅକ୍ଷର) ପାଏ ଏବଂ କେବଳ ନିଜର CDR ରେକର୍ଡ ଦେଖିପାରେ।", "Give each facility only its own passcode plus the downloaded logins file (they load it once on the login screen).": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ କେବଳ ତାର ନିଜର ପାସକୋଡ୍ ଏବଂ ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଲଗଇନ୍ ଫାଇଲ୍ ଦିଅନ୍ତୁ (ସେମାନେ ଲଗଇନ୍ ପରଦାରେ ଥରେ ଏହାକୁ ଲୋଡ୍ କରିବେ)।", "Leave a passcode empty to skip a facility. A facility marked (login exists) keeps its old passcode unless you enter a new one. Passcodes you enter stay while you change the filter.": "କୌଣସି ସଂସ୍ଥାକୁ ଛାଡ଼ିବାକୁ ପାସକୋଡ୍ ଖାଲି ରଖନ୍ତୁ। (ଲଗଇନ୍ ଅଛି) ଚିହ୍ନିତ ସଂସ୍ଥା ନୂଆ ପାସକୋଡ୍ ନଦେଲେ ପୁରୁଣା ପାସକୋଡ୍ ରଖେ। ଫିଲ୍ଟର୍ ବଦଳାଇଲେ ମଧ୍ୟ ଆପଣ ଦେଇଥିବା ପାସକୋଡ୍ ରହିଥାଏ।", "Search name or code": "ନାମ କିମ୍ବା କୋଡ୍ ଖୋଜନ୍ତୁ", "Generate for all shown without a login": "ଲଗଇନ୍ ନଥିବା ସମସ୍ତ ଦେଖାଯାଇଥିବା ସଂସ୍ଥା ପାଇଁ ତିଆରି କରନ୍ତୁ", "Create logins file + passcode list": "ଲଗଇନ୍ ଫାଇଲ୍ + ପାସକୋଡ୍ ତାଲିକା ତିଆରି କରନ୍ତୁ", "Import passcode list (CSV)": "ପାସକୋଡ୍ ତାଲିକା (CSV) ଆମଦାନି କରନ୍ତୁ", "Type": "ପ୍ରକାର", "Facility": "ସଂସ୍ଥା", "(login exists)": "(ଲଗଇନ୍ ଅଛି)", "No facility matches.": "କୌଣସି ସଂସ୍ଥା ମେଳ ଖାଉନାହିଁ।", "(none)": "(କିଛି ନାହିଁ)", "Add": "ଯୋଡ଼ନ୍ତୁ", "Language": "ଭାଷା"};
+  var DICT = {"Downloading update…": "ଅପଡେଟ୍ ଡାଉନଲୋଡ୍ ହେଉଛି…", "Update available": "ଅପଡେଟ୍ ଉପଲବ୍ଧ", "Update": "ଅପଡେଟ୍", "Later": "ପରେ", "Installing update…": "ଅପଡେଟ୍ ଇନଷ୍ଟଲ୍ ହେଉଛି…", "Updated to the latest version": "ସର୍ବଶେଷ ସଂସ୍କରଣକୁ ଅପଡେଟ୍ ହୋଇଗଲା", "Online": "ଅନଲାଇନ୍", "Offline": "ଅଫଲାଇନ୍", "Install app": "ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "MPCDSR Dashboard": "MPCDSR ଡ୍ୟାସବୋର୍ଡ", "Select your district (and your block or facility, if you have a block or facility login) and enter your passcode. You will only see your own district's, block's or facility's records.": "ଆପଣଙ୍କ ଜିଲ୍ଲା (ଏବଂ ଆପଣଙ୍କର ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା ଲଗଇନ୍ ଥିଲେ ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥା) ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ। ଆପଣ କେବଳ ନିଜ ଜିଲ୍ଲା, ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥାର ରେକର୍ଡ ଦେଖିପାରିବେ।", "Show": "ଦେଖାନ୍ତୁ", "Hide": "ଲୁଚାନ୍ତୁ", "Open dashboard": "ଡ୍ୟାସବୋର୍ଡ ଖୋଲନ୍ତୁ", "Use offline (no cloud)": "ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ନାହିଁ)", "Viewing:": "ଦେଖୁଛନ୍ତି:", "Facility logins": "ସଂସ୍ଥା ଲଗଇନ୍", "Log out": "ଲଗ୍ ଆଉଟ୍", "Maternal & Child Death Review — Dashboard": "ମାତୃ ଓ ଶିଶୁ ମୃତ୍ୟୁ ସମୀକ୍ଷା — ଡ୍ୟାସବୋର୍ଡ", "Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.": "ଜିଲ୍ଲାୱାରୀ ଧାରା, କାରଣ ଓ ରିପୋର୍ଟିଂ ସମ୍ପୂର୍ଣ୍ଣତା ଦେଖିବା ପାଇଁ MDR ଲାଇନ୍-ଲିଷ୍ଟିଂ ୱାର୍କବୁକ୍ ଏବଂ/କିମ୍ବା CDR ସାରାଂଶ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "MDR (Maternal Deaths)": "MDR (ମାତୃ ମୃତ୍ୟୁ)", "CDR (Child Deaths)": "CDR (ଶିଶୁ ମୃତ୍ୟୁ)", "You are offline - showing the saved app. Cloud records need a connection.": "ଆପଣ ଅଫଲାଇନ୍ ଅଛନ୍ତି - ସେଭ୍ ହୋଇଥିବା ଆପ୍ ଦେଖାଯାଉଛି। କ୍ଲାଉଡ୍ ରେକର୍ଡ ପାଇଁ ଇଣ୍ଟରନେଟ୍ ଦରକାର।", "Passcode": "ପାସକୋଡ୍", "Show passcode": "ପାସକୋଡ୍ ଦେଖାନ୍ତୁ", "Hide passcode": "ପାସକୋଡ୍ ଲୁଚାନ୍ତୁ", "Dismiss": "ବନ୍ଦ କରନ୍ତୁ", "Install MPCDSR app": "MPCDSR ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ", "Create facility logins (SNCU/NBSU and all facilities) for this district": "ଏହି ଜିଲ୍ଲା ପାଇଁ ସଂସ୍ଥା ଲଗଇନ୍ ତିଆରି କରନ୍ତୁ (SNCU/NBSU ଓ ସମସ୍ତ ସଂସ୍ଥା)", "Select State / District…": "ରାଜ୍ୟ / ଜିଲ୍ଲା ବାଛନ୍ତୁ…", "Block / Facility (leave blank for district login)": "ବ୍ଲକ୍ / ସଂସ୍ଥା (ଜିଲ୍ଲା ଲଗଇନ୍ ପାଇଁ ଖାଲି ରଖନ୍ତୁ)", "SNCU / NBSU (leave blank if not an SNCU/NBSU)": "SNCU / NBSU (SNCU/NBSU ନହେଲେ ଖାଲି ରଖନ୍ତୁ)", "State / Admin (all districts)": "ରାଜ୍ୟ / ଆଡମିନ୍ (ସମସ୍ତ ଜିଲ୍ଲା)", "District login (all blocks)": "ଜିଲ୍ଲା ଲଗଇନ୍ (ସମସ୍ତ ବ୍ଲକ୍)", "All districts (State)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ)", "Offline mode (no cloud) — data stays on this device": "ଅଫଲାଇନ୍ ମୋଡ୍ (କ୍ଲାଉଡ୍ ନାହିଁ) — ତଥ୍ୟ ଏହି ଡିଭାଇସ୍‌ରେ ରହିବ", "Save records to cloud": "ରେକର୍ଡ କ୍ଲାଉଡ୍‌ରେ ସେଭ୍ କରନ୍ତୁ", "Load latest": "ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ", "Delete cloud records": "କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରନ୍ତୁ", "Records": "ରେକର୍ଡ", "Click to upload": "ଅପଲୋଡ୍ କରିବାକୁ କ୍ଲିକ୍ କରନ୍ତୁ", "workbook (.xlsx)": "ୱାର୍କବୁକ୍ (.xlsx)", "No file selected": "କୌଣସି ଫାଇଲ୍ ବଛାଯାଇନାହିଁ", "aggregate workbook": "ସାରାଂଶ ୱାର୍କବୁକ୍", "raw line-listing": "ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ", "Optional:": "ବୈକଳ୍ପିକ:", "District/Month-wise Delivery data": "ଜିଲ୍ଲା/ମାସ ଅନୁସାରେ ପ୍ରସବ ତଥ୍ୟ", "Year": "ବର୍ଷ", "All Years": "ସମସ୍ତ ବର୍ଷ", "Duration: From": "ଅବଧି: ଠାରୁ", "To": "ପର୍ଯ୍ୟନ୍ତ", "Month": "ମାସ", "All Districts (state total)": "ସମସ୍ତ ଜିଲ୍ଲା (ରାଜ୍ୟ ମୋଟ)", "All Blocks": "ସମସ୍ତ ବ୍ଲକ୍", "District": "ଜିଲ୍ଲା", "Block": "ବ୍ଲକ୍", "Download XLSX + records (this month)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ଏହି ମାସ)", "Download XLSX + records (all months)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ସମସ୍ତ ମାସ)", "Download XLSX + records (block-wise, month-wise)": "XLSX + ରେକର୍ଡ ଡାଉନଲୋଡ୍ (ବ୍ଲକ୍-ଅନୁସାରେ, ମାସ-ଅନୁସାରେ)", "Deceased list for SamMpurna (ANC)": "ସମ୍ପୂର୍ଣ୍ଣା (ANC) ପାଇଁ ମୃତକଙ୍କ ତାଲିକା", "Clear": "ଖାଲି କରନ୍ତୁ", "Upload a workbook to see the dashboard.": "ଡ୍ୟାସବୋର୍ଡ ଦେଖିବାକୁ ଏକ ୱାର୍କବୁକ୍ ଅପଲୋଡ୍ କରନ୍ତୁ।", "Upload the line-listing (or load saved records from the cloud) to search records.": "ରେକର୍ଡ ଖୋଜିବା ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ (କିମ୍ବା କ୍ଲାଉଡ୍‌ରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଲୋଡ୍ କରନ୍ତୁ)।", "No matching records in the line-listing for this selection": "ଏହି ଚୟନ ପାଇଁ ଲାଇନ୍-ଲିଷ୍ଟିଂରେ ମେଳ ଖାଉଥିବା ରେକର୍ଡ ନାହିଁ", "Name of the Deceased Mother": "ମୃତ ମାତାଙ୍କ ନାମ", "Name & address of the Husband / Guardian": "ସ୍ୱାମୀ / ଅଭିଭାବକଙ୍କ ନାମ ଓ ଠିକଣା", "Age": "ବୟସ", "Date of death": "ମୃତ୍ୟୁ ତାରିଖ", "Place": "ସ୍ଥାନ", "Death period": "ମୃତ୍ୟୁ ସମୟକାଳ", "Direct cause": "ସିଧାସଳଖ କାରଣ", "Associated cause": "ସହଯୋଗୀ କାରଣ", "Name of facility": "ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ", "Days: Delivery→Death": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ", "Days: Delivery→Death (Post natal)": "ଦିନ: ପ୍ରସବ→ମୃତ୍ୟୁ (ପ୍ରସବୋତ୍ତର)", "High risk pregnancy": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା", "Risk details": "ବିପଦର ବିବରଣୀ", "Gravida": "ଗ୍ରାଭିଡା", "Para": "ପାରା", "PHC Area": "PHC ଅଞ୍ଚଳ", "Sub Centre": "ଉପକେନ୍ଦ୍ର", "Reporting month/year": "ରିପୋର୍ଟିଂ ମାସ/ବର୍ଷ", "Gender": "ଲିଙ୍ଗ", "Caste": "ଜାତି", "Place of death": "ମୃତ୍ୟୁ ସ୍ଥାନ", "Date of birth": "ଜନ୍ମ ତାରିଖ", "Age category": "ବୟସ ବର୍ଗ", "Birth weight (Kg)": "ଜନ୍ମ ଓଜନ (କିଗ୍ରା)", "Probable cause (major)": "ସମ୍ଭାବ୍ୟ କାରଣ (ମୁଖ୍ୟ)", "Probable cause (other)": "ସମ୍ଭାବ୍ୟ କାରଣ (ଅନ୍ୟ)", "Specify other direct cause": "ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ", "New entry": "ନୂଆ ଏଣ୍ଟ୍ରି", "Add record": "ରେକର୍ଡ ଯୋଡ଼ନ୍ତୁ", "Clear form": "ଫର୍ମ ଖାଲି କରନ୍ତୁ", "View": "ଦେଖନ୍ତୁ", "Edit": "ସମ୍ପାଦନ", "Close": "ବନ୍ଦ କରନ୍ତୁ", "— select —": "— ବାଛନ୍ତୁ —", "Save changes": "ପରିବର୍ତ୍ତନ ସେଭ୍ କରନ୍ତୁ", "Cancel": "ବାତିଲ୍", "No records loaded yet — upload a line-listing or use ☁ Load latest.": "ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ରେକର୍ଡ ଲୋଡ୍ ହୋଇନାହିଁ — ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ କିମ୍ବା ☁ ସର୍ବଶେଷ ଲୋଡ୍ କରନ୍ତୁ ବ୍ୟବହାର କରନ୍ତୁ।", "Total deaths": "ମୋଟ ମୃତ୍ୟୁ", "Total death": "ମୋଟ ମୃତ୍ୟୁ", "Facility deaths": "ସଂସ୍ଥାରେ ମୃତ୍ୟୁ", "Home deaths": "ଘରେ ମୃତ୍ୟୁ", "Transit deaths": "ରାସ୍ତାରେ ମୃତ୍ୟୁ", "Male": "ପୁରୁଷ", "Female": "ମହିଳା", "Neonatal (0-28 days)": "ନବଜାତ (0-28 ଦିନ)", "Infant": "ଶିଶୁ", "Child": "ପିଲା", "Other cause": "ଅନ୍ୟ କାରଣ", "HRP deaths": "HRP ମୃତ୍ୟୁ", "Non-HRP deaths": "ଅଣ-HRP ମୃତ୍ୟୁ", "Antenatal deaths": "ପ୍ରସବପୂର୍ବ ମୃତ୍ୟୁ", "Intranatal deaths": "ପ୍ରସବକାଳୀନ ମୃତ୍ୟୁ", "Post natal deaths": "ପ୍ରସବୋତ୍ତର ମୃତ୍ୟୁ", "Post Abortion deaths": "ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ ମୃତ୍ୟୁ", "Total deliveries (from Delivery data upload)": "ମୋଟ ପ୍ରସବ (ପ୍ରସବ ତଥ୍ୟ ଅପଲୋଡ୍‌ରୁ)", "Total (All Months)": "ମୋଟ (ସମସ୍ତ ମାସ)", "Types of High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP) ର ପ୍ରକାର", "(click a card to see the matching records)": "(ମେଳ ଖାଉଥିବା ରେକର୍ଡ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Place of death breakdown": "ମୃତ୍ୟୁ ସ୍ଥାନ ଅନୁସାରେ ବିଭାଜନ", "Age-wise breakdown": "ବୟସ ଅନୁସାରେ ବିଭାଜନ", "Cause of death breakdown": "ମୃତ୍ୟୁ କାରଣ ଅନୁସାରେ ବିଭାଜନ", "(click a card to see the district-wise split)": "(ଜିଲ୍ଲା ଅନୁସାରେ ବିଭାଜନ ଦେଖିବାକୁ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Death period breakdown (Antenatal / Intranatal / Post natal / Post Abortion)": "ମୃତ୍ୟୁ ସମୟକାଳ ଅନୁସାରେ ବିଭାଜନ (ପ୍ରସବପୂର୍ବ / ପ୍ରସବକାଳୀନ / ପ୍ରସବୋତ୍ତର / ଗର୍ଭପାତ ପରବର୍ତ୍ତୀ)", "District-wise comparison": "ଜିଲ୍ଲା ଅନୁସାରେ ତୁଳନା", "Metric": "ମାପକ", "Sort": "କ୍ରମ", "High → Low": "ଅଧିକରୁ କମ୍", "A → Z": "A → Z", "Block-wise comparison": "ବ୍ଲକ୍ ଅନୁସାରେ ତୁଳନା", "(from line-listing upload — select a District above to view — click a block card to see its matching records)": "(ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍‌ରୁ — ଦେଖିବାକୁ ଉପରେ ଜିଲ୍ଲା ବାଛନ୍ତୁ — ମେଳ ଖାଉଥିବା ରେକର୍ଡ ପାଇଁ ବ୍ଲକ୍ କାର୍ଡରେ କ୍ଲିକ୍ କରନ୍ତୁ)", "Breakdown": "ବିଭାଜନ", "Columns to compare (pick 2+)": "ତୁଳନା ପାଇଁ ସ୍ତମ୍ଭ (2 ବା ଅଧିକ ବାଛନ୍ତୁ)", "Month-wise total deaths": "ମାସ ଅନୁସାରେ ମୋଟ ମୃତ୍ୟୁ", "Quarter-wise comparison": "ତ୍ରୈମାସିକ ଅନୁସାରେ ତୁଳନା", "Trend across months": "ମାସ ମାସ ଧାରା", "Metric label to trend (matched by name across month sheets)": "ଧାରା ପାଇଁ ମାପକ ନାମ (ମାସ ସିଟ୍ ମଧ୍ୟରେ ନାମ ଅନୁସାରେ ମେଳ)", "Build trend": "ଧାରା ତିଆରି କରନ୍ତୁ", "Full data table": "ସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ ତାଲିକା", "Cause of death columns": "ମୃତ୍ୟୁ କାରଣ ସ୍ତମ୍ଭ", "Place of death columns": "ମୃତ୍ୟୁ ସ୍ଥାନ ସ୍ତମ୍ଭ", "Age not stated": "ବୟସ ଉଲ୍ଲେଖ ନାହିଁ", "Upload the optional raw line-listing to see individual records here.": "ଏଠାରେ ବ୍ୟକ୍ତିଗତ ରେକର୍ଡ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ।", "View records": "ରେକର୍ଡ ଦେଖନ୍ତୁ", "No HRP records for this selection": "ଏହି ଚୟନ ପାଇଁ କୌଣସି HRP ରେକର୍ଡ ନାହିଁ", "No districts reported this age group": "ଏହି ବୟସ ବର୍ଗ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/age group": "ଏହି ଜିଲ୍ଲା/ବୟସ ବର୍ଗ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "No districts reported this cause": "ଏହି କାରଣ ପାଇଁ କୌଣସି ଜିଲ୍ଲା ରିପୋର୍ଟ କରିନାହିଁ", "No block-level data for this district/cause": "ଏହି ଜିଲ୍ଲା/କାରଣ ପାଇଁ ବ୍ଲକ୍ ସ୍ତରୀୟ ତଥ୍ୟ ନାହିଁ", "Upload the optional raw line-listing to see this breakdown": "ଏହି ବିଭାଜନ ଦେଖିବାକୁ ବୈକଳ୍ପିକ ମୂଳ ଲାଇନ୍-ଲିଷ୍ଟିଂ ଅପଲୋଡ୍ କରନ୍ତୁ", "Districts / rows": "ଜିଲ୍ଲା / ଧାଡ଼ି", "Blocks (from line-listing)": "ବ୍ଲକ୍ (ଲାଇନ୍-ଲିଷ୍ଟିଂରୁ)", "Institutional deliveries": "ସଂସ୍ଥାଗତ ପ୍ରସବ", "Home deliveries": "ଘରୋଇ ପ୍ରସବ", "Non-HRP": "ଅଣ-HRP", "High Risk Pregnancy (HRP)": "ଉଚ୍ଚ ବିପଦ ଗର୍ଭାବସ୍ଥା (HRP)", "< 1 month": "< 1 ମାସ", "1–3 months": "1–3 ମାସ", "3–12 months": "3–12 ମାସ", "Incorrect passcode.": "ଭୁଲ୍ ପାସକୋଡ୍।", "Please select your district.": "ଦୟାକରି ଆପଣଙ୍କ ଜିଲ୍ଲା ବାଛନ୍ତୁ।", "Enter your block passcode.": "ଆପଣଙ୍କ ବ୍ଲକ୍ ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Enter your facility passcode.": "ଆପଣଙ୍କ ସଂସ୍ଥାର ପାସକୋଡ୍ ଦିଅନ୍ତୁ।", "Checking…": "ଯାଞ୍ଚ ହେଉଛି…", "Block login not found.": "ବ୍ଲକ୍ ଲଗଇନ୍ ମିଳିଲା ନାହିଁ।", "Checking previously saved records...": "ପୂର୍ବରୁ ସେଭ୍ ହୋଇଥିବା ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "Checking cloud for records...": "କ୍ଲାଉଡ୍‌ରେ ରେକର୍ଡ ଯାଞ୍ଚ ହେଉଛି...", "No cloud records to delete.": "ଡିଲିଟ୍ କରିବାକୁ କ୍ଲାଉଡ୍ ରେକର୍ଡ ନାହିଁ।", "Delete cancelled.": "ଡିଲିଟ୍ ବାତିଲ୍ ହେଲା।", "Load a file first.": "ପ୍ରଥମେ ଏକ ଫାଇଲ୍ ଲୋଡ୍ କରନ୍ତୁ।", "Name of the Deceased Mother is required.": "ମୃତ ମାତାଙ୍କ ନାମ ଆବଶ୍ୟକ।", "Block is required.": "ବ୍ଲକ୍ ଆବଶ୍ୟକ।", "Date of birth must be dd-mm-yyyy.": "ଜନ୍ମ ତାରିଖ dd-mm-yyyy ଫର୍ମାଟରେ ହେବା ଆବଶ୍ୟକ।", "Date of birth cannot be in the future.": "ଜନ୍ମ ତାରିଖ ଭବିଷ୍ୟତରେ ହୋଇପାରିବ ନାହିଁ।", "Date of birth cannot be after the date of death.": "ଜନ୍ମ ତାରିଖ ମୃତ୍ୟୁ ତାରିଖ ପରେ ହୋଇପାରିବ ନାହିଁ।", "Please specify the other direct cause of death.": "ଦୟାକରି ମୃତ୍ୟୁର ଅନ୍ୟ ସିଧାସଳଖ କାରଣ ଲେଖନ୍ତୁ।", "Facility logins add child death (CDR) records only.": "ସଂସ୍ଥା ଲଗଇନ୍ କେବଳ ଶିଶୁ ମୃତ୍ୟୁ (CDR) ରେକର୍ଡ ଯୋଡ଼ିପାରିବ।", "Block and facility logins cannot delete cloud records.": "ବ୍ଲକ୍ ଏବଂ ସଂସ୍ଥା ଲଗଇନ୍ କ୍ଲାଉଡ୍ ରେକର୍ଡ ଡିଲିଟ୍ କରିପାରିବେ ନାହିଁ।", "Cloud save failed": "କ୍ଲାଉଡ୍ ସେଭ୍ ବିଫଳ ହେଲା", "Encryption is not available in this browser window. Use Chrome or Edge.": "ଏହି ବ୍ରାଉଜର୍ ୱିଣ୍ଡୋରେ ଏନକ୍ରିପସନ୍ ଉପଲବ୍ଧ ନାହିଁ। Chrome କିମ୍ବା Edge ବ୍ୟବହାର କରନ୍ତୁ।", "Facility logins are created from a DISTRICT login (the district passcode is needed to open the cloud for facility users).": "ସଂସ୍ଥା ଲଗଇନ୍ ଜିଲ୍ଲା ଲଗଇନ୍‌ରୁ ତିଆରି ହୁଏ (ସଂସ୍ଥା ଉପଭୋକ୍ତାଙ୍କ ପାଇଁ କ୍ଲାଉଡ୍ ଖୋଲିବାକୁ ଜିଲ୍ଲା ପାସକୋଡ୍ ଦରକାର)।", "Enter or generate at least one facility passcode.": "ଅତିକମରେ ଗୋଟିଏ ସଂସ୍ଥା ପାସକୋଡ୍ ଦିଅନ୍ତୁ କିମ୍ବା ତିଆରି କରନ୍ତୁ।", "Each facility needs a different passcode.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ ଭିନ୍ନ ପାସକୋଡ୍ ଦରକାର।", "This is not a valid passcode list (needs District, Type, Facility code, Facility, Passcode).": "ଏହା ଏକ ବୈଧ ପାସକୋଡ୍ ତାଲିକା ନୁହେଁ (District, Type, Facility code, Facility, Passcode ଦରକାର)।", "Each facility (SNCU / NBSU, CHC, PHC, DHH, ...) gets its own passcode (6+ characters) and sees only its own CDR records.": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥା (SNCU / NBSU, CHC, PHC, DHH, ...) ନିଜର ପାସକୋଡ୍ (6+ ଅକ୍ଷର) ପାଏ ଏବଂ କେବଳ ନିଜର CDR ରେକର୍ଡ ଦେଖିପାରେ।", "Give each facility only its own passcode plus the downloaded logins file (they load it once on the login screen).": "ପ୍ରତ୍ୟେକ ସଂସ୍ଥାକୁ କେବଳ ତାର ନିଜର ପାସକୋଡ୍ ଏବଂ ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଲଗଇନ୍ ଫାଇଲ୍ ଦିଅନ୍ତୁ (ସେମାନେ ଲଗଇନ୍ ପରଦାରେ ଥରେ ଏହାକୁ ଲୋଡ୍ କରିବେ)।", "Leave a passcode empty to skip a facility. A facility marked (login exists) keeps its old passcode unless you enter a new one. Passcodes you enter stay while you change the filter.": "କୌଣସି ସଂସ୍ଥାକୁ ଛାଡ଼ିବାକୁ ପାସକୋଡ୍ ଖାଲି ରଖନ୍ତୁ। (ଲଗଇନ୍ ଅଛି) ଚିହ୍ନିତ ସଂସ୍ଥା ନୂଆ ପାସକୋଡ୍ ନଦେଲେ ପୁରୁଣା ପାସକୋଡ୍ ରଖେ। ଫିଲ୍ଟର୍ ବଦଳାଇଲେ ମଧ୍ୟ ଆପଣ ଦେଇଥିବା ପାସକୋଡ୍ ରହିଥାଏ।", "Search name or code": "ନାମ କିମ୍ବା କୋଡ୍ ଖୋଜନ୍ତୁ", "Generate for all shown without a login": "ଲଗଇନ୍ ନଥିବା ସମସ୍ତ ଦେଖାଯାଇଥିବା ସଂସ୍ଥା ପାଇଁ ତିଆରି କରନ୍ତୁ", "Create logins file + passcode list": "ଲଗଇନ୍ ଫାଇଲ୍ + ପାସକୋଡ୍ ତାଲିକା ତିଆରି କରନ୍ତୁ", "Import passcode list (CSV)": "ପାସକୋଡ୍ ତାଲିକା (CSV) ଆମଦାନି କରନ୍ତୁ", "Type": "ପ୍ରକାର", "Facility": "ସଂସ୍ଥା", "(login exists)": "(ଲଗଇନ୍ ଅଛି)", "No facility matches.": "କୌଣସି ସଂସ୍ଥା ମେଳ ଖାଉନାହିଁ।", "(none)": "(କିଛି ନାହିଁ)", "Add": "ଯୋଡ଼ନ୍ତୁ", "Language": "ଭାଷା", "Reporting details": "ରିପୋର୍ଟିଂ ବିବରଣୀ", "Type of death": "ମୃତ୍ୟୁର ପ୍ରକାର", "Area": "ଅଞ୍ଚଳ", "Rural area": "ଗ୍ରାମାଞ୍ଚଳ", "PHC area (PHC)": "PHC ଅଞ୍ଚଳ (PHC)", "Sub centre": "ଉପ-କେନ୍ଦ୍ର", "Village": "ଗ୍ରାମ", "Urban area": "ସହରାଞ୍ଚଳ", "Urban local body (ULB / Municipality)": "ସହରାଞ୍ଚଳ ସ୍ଥାନୀୟ ସଂସ୍ଥା (ULB / ପୌରସଭା)", "Ward": "ୱାର୍ଡ", "Urban health facility (UPHC / UHWC)": "ସହରାଞ୍ଚଳ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର (UPHC / UHWC)", "Reported by (ANM / ASHA name)": "ରିପୋର୍ଟ କରିଥିବା ବ୍ୟକ୍ତି (ANM / ASHA ନାମ)", "Reporter mobile number": "ରିପୋର୍ଟକାରୀଙ୍କ ମୋବାଇଲ୍ ନମ୍ବର", "Maternal death (MDR) details": "ମାତୃ ମୃତ୍ୟୁ (MDR) ବିବରଣୀ", "Age (years)": "ବୟସ (ବର୍ଷ)", "Educational status": "ଶିକ୍ଷାଗତ ଯୋଗ୍ୟତା", "Hb (gm/dl) – last record": "ହିମୋଗ୍ଲୋବିନ୍ (gm/dl) – ଶେଷ ରେକର୍ଡ", "Type of facility": "ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ରର ପ୍ରକାର", "Name of facility (not in the list)": "ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ (ତାଲିକାରେ ନାହିଁ)", "Date of delivery": "ପ୍ରସବ ତାରିଖ", "Delivery occurred at": "ପ୍ରସବ ସ୍ଥାନ", "Delivery facility type": "ପ୍ରସବ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ରର ପ୍ରକାର", "Name of delivery facility": "ପ୍ରସବ ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ", "Name of delivery facility (not in the list)": "ପ୍ରସବ ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ (ତାଲିକାରେ ନାହିଁ)", "Expected date of delivery (EDD)": "ପ୍ରସବର ଅନୁମାନିତ ତାରିଖ (EDD)", "Direct cause of death": "ମୃତ୍ୟୁର ସିଧାସଳଖ କାରଣ", "High risk condition": "ଉଚ୍ଚ ବିପଦ ଅବସ୍ଥା", "High risk details (specify other)": "ଉଚ୍ଚ ବିପଦର ବିବରଣୀ (ଅନ୍ୟ ଲେଖନ୍ତୁ)", "Child death (CDR) details": "ଶିଶୁ ମୃତ୍ୟୁ (CDR) ବିବରଣୀ", "Name of the child": "ଶିଶୁର ନାମ", "Name of the mother": "ମାତାଙ୍କ ନାମ", "Sex": "ଲିଙ୍ଗ", "Place of birth": "ଜନ୍ମ ସ୍ଥାନ", "Birth facility type": "ଜନ୍ମ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ରର ପ୍ରକାର", "Name of birth facility": "ଜନ୍ମ ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ", "Name of birth facility (not in the list)": "ଜନ୍ମ ସ୍ୱାସ୍ଥ୍ୟ ସଂସ୍ଥାର ନାମ (ତାଲିକାରେ ନାହିଁ)", "Age (e.g. 12 days)": "ବୟସ (ଉଦା. 12 days)", "Birth weight (kg)": "ଜନ୍ମ ଓଜନ (କି.ଗ୍ରା.)", "Completeness of immunisation as per age": "ବୟସ ଅନୁସାରେ ଟୀକାକରଣ ସମ୍ପୂର୍ଣ୍ଣତା", "Probable cause of death (major)": "ମୃତ୍ୟୁର ସମ୍ଭାବ୍ୟ କାରଣ (ମୁଖ୍ୟ)", "Other cause / details": "ଅନ୍ୟ କାରଣ / ବିବରଣୀ", "Maternal death (MDR)": "ମାତୃ ମୃତ୍ୟୁ (MDR)", "Child death – under 5 years (CDR)": "ଶିଶୁ ମୃତ୍ୟୁ – ୫ ବର୍ଷରୁ କମ୍ (CDR)", "Rural": "ଗ୍ରାମାଞ୍ଚଳ", "Urban": "ସହରାଞ୍ଚଳ", "Angul": "ଅନୁଗୁଳ", "Balangir": "ବଲାଙ୍ଗୀର", "Balasore": "ବାଲେଶ୍ୱର", "Bargarh": "ବରଗଡ଼", "Bhadrak": "ଭଦ୍ରକ", "Boudh": "ବୌଦ୍ଧ", "Cuttack": "କଟକ", "Deogarh": "ଦେଓଗଡ଼", "Dhenkanal": "ଢେଙ୍କାନାଳ", "Gajapati": "ଗଜପତି", "Ganjam": "ଗଞ୍ଜାମ", "Jagatsinghapur": "ଜଗତସିଂହପୁର", "Jajpur": "ଯାଜପୁର", "Jharsuguda": "ଝାରସୁଗୁଡ଼ା", "Kalahandi": "କଳାହାଣ୍ଡି", "Kandhamal": "କନ୍ଧମାଳ", "Kendrapara": "କେନ୍ଦ୍ରାପଡ଼ା", "Keonjhar": "କେନ୍ଦୁଝର", "Khordha": "ଖୋର୍ଦ୍ଧା", "Koraput": "କୋରାପୁଟ", "Malkangiri": "ମାଲକାନଗିରି", "Mayurbhanj": "ମୟୂରଭଞ୍ଜ", "Nabarangpur": "ନବରଙ୍ଗପୁର", "Nayagarh": "ନୟାଗଡ", "Nuapada": "ନୂଆପଡ଼ା", "Puri": "ପୁରୀ", "Rayagada": "ରାୟଗଡା", "Sambalpur": "ସମ୍ବଲପୁର", "Sonepur": "ସୋନପୁର", "Sundargarh": "ସୁନ୍ଦରଗଡ଼", "Anugul": "ଅନୁଗୁଳ", "Athmallik": "ଆଠମଲ୍ଲିକ", "Banarpal": "ବନରପାଲ", "Chhendipada": "ଛେଣ୍ଡିପଦା", "Kaniha": "କନିହା", "Kishorenagar": "କିଶୋରନଗର", "Palalahada": "ପାଲଲହଡା", "Talacher": "ତାଲାଚେର", "Agalpur": "ଆଗଲପୁର", "Bangomunda": "ବାଙ୍ଗୋମୁଣ୍ଡା", "Belpara": "ବେଲପାରା", "Deogaon": "ଦେଓଗାଁ", "Gudvella": "ଗୁଡଭେଲା", "Khaprakhol": "ଖପ୍ରାଖୋଲ", "Loisinga": "ଲୋଇସିଙ୍ଗା", "Muribahal": "ମୁରିବାହାଲ", "Patnagarh": "ପାଟଣାଗଡ଼", "Puintala": "ପୁଇଣ୍ଟଲା", "Saintala": "ସେଣ୍ଟାଲା", "Titlagarh": "ଟିଟଲାଗଡ଼", "Turekela": "ତୁରେକେଲା", "Bahanaga": "ବାହାନାଗା", "Baleshwar": "ବାଲେଶ୍ୱର", "Baliapal": "ବାଲିଆପାଳ", "Basta": "ବାସ୍ତା", "Bhograi": "ଭୋଗରାଇ", "Jaleswar": "ଜଳେଶ୍ୱର", "Khaira": "ଖଇରା", "Nilgiri": "ନୀଳଗିରି", "Oupada": "ଓଉପାଡା", "Remuna": "ରେମୁନା", "Simulia": "ସିମୁଲିଆ", "Soro": "ସୋରୋ", "Ambabhona": "ଆମ୍ବାଭୋନା", "Attabira": "ଆଟାବିରା", "Barpali": "ବରପାଲି", "Bhatli": "ଭଟଲି", "Bheden": "ଭେଡେନ୍", "Bijepur": "ବିଜେପୁର", "Gaisilet": "ଗାଇସିଲେଟ୍", "Jharbandh": "ଝାରବନ୍ଧ", "Padampur": "ପଦମପୁର", "Paikmal": "ପାଇକମାଲ", "Sohella": "ସୋହେଲା", "Basudevpur": "ବାସୁଦେବପୁର", "Bhandaripokhari": "ଭଣ୍ଡାରିପୋଖରୀ", "Bonth": "ବନ୍ଥ", "Chandabali": "ଚାନ୍ଦାବାଲି", "Dhamanagar": "ଧାମନଗର", "Tihidi": "ତିହିଡି", "Harabhanga": "ହାରଭଙ୍ଗା", "Kantamal": "କାଣ୍ଟାମାଲ", "Athagad": "ଆଠଗଡ", "Badamba": "ବଡମ୍ବା", "Banki": "ବାଙ୍କି", "Banki- Dampara": "ବାଙ୍କି- ଡମ୍ପରା", "Baranga": "ବାରଙ୍ଗା", "Cuttacksadar": "କଟକସଦର", "Kantapada": "କଣ୍ଟାପଡ଼ା", "Mahanga": "ମାହାଙ୍ଗା", "Narasinghpur": "ନରସିଂହପୁର", "Niali": "ନିଆଲି", "Nischinta Koili": "ନିଶ୍ଚିନ୍ତ କୋଇଲି", "Salepur": "ସାଲେପୁର", "Tangi Choudwar": "ଟାଙ୍ଗୀ ଚୌଦ୍ୱାର", "Tigiria": "ଟିଗିରିଆ", "Barkote": "ବାର୍କୋଟେ", "Reamal": "ରିଆମାଲ", "Tileibani": "ତିଲେଇବାନି", "Bhuban": "ଭୁବନ", "Dhenkanal Sadar": "ଢେଙ୍କାନାଳ ସଦର", "Gondia": "ଗୋଣ୍ଡିଆ", "Hindol": "ହିଣ୍ଡୋଲ୍", "Kamakhyanagar": "କାମାକ୍ଷାନଗର", "Kankada Had": "କାଙ୍କଡା ହାଡ୍", "Odapada": "ଓଡାପଡା", "Parjang": "ପରଜଙ୍ଗ", "Gosani": "ଗୋସାନି", "Gumma": "ଗୁମ୍ମା", "Kasinagar": "କାସିନଗର", "Mohana": "ମୋହନା", "Nuagada": "ନୁଆଗଡ଼ା", "R.Udayagiri": "ଆର.ଉଦୟଗିରି", "Aska": "ଆସ୍କା", "Beguniapada": "ବେଗୁନିଆପଡ଼ା", "Bellaguntha": "ବେଲାଗୁନ୍ଥା", "Bhanjanagar": "ଭଞ୍ଜନଗର", "Buguda": "ବୁଗୁଡା", "Chatrapur": "ଛତ୍ରପୁର", "Chikiti": "ଚିକିଟି", "Dharakote": "ଧରାକୋଟେ", "Digapahandi": "ଦିଗପହାଣ୍ଡି", "Hinjilicut": "ହିଞ୍ଜିଳିକାଟ୍", "Jagannathprasad": "ଜଗନ୍ନାଥପ୍ରସାଦ", "Kabisuryanagar": "କବିସୂର୍ଯ୍ୟନଗର", "Khallikote": "ଖଲ୍ଲିକୋଟ", "Kukudakhandi": "କୁକୁଡାଖଣ୍ଡି", "Patrapur": "ପାତ୍ରପୁର", "Polosara": "ପୋଲୋସାରା", "Purushottampur": "ପୁରୁଷୋତ୍ତମପୁର", "Rangeilunda": "ରଙ୍ଗେଇଲୁଣ୍ଡା", "Sanakhemundi": "ସାନାଖେମୁଣ୍ଡି", "Sheragada": "ଶେରଗାଡା", "Surada": "ସୁରଡା", "Balikuda": "ବାଲିକୁଦା", "Biridi": "ବିରିଡି", "Erasama": "ଇରାସାମା", "Jagatsinghpur": "ଜଗତସିଂପୁର", "Kujang": "କୁଜାଙ୍ଗ", "Naugaon": "ନାଉଗାଁଓ", "Raghunathpur": "ରଘୁନାଥପୁର", "Tirtol": "ତିର୍ଟୋଲ୍", "Badchana": "ବଡ଼ଚଣା", "Bari": "ବାରି", "Binjharpur": "ବିଞ୍ଝାରପୁର", "Dahrmasala": "ଦହରମସାଲା", "Danagadi": "ଦାନଗଦି", "Dasarathapur": "ଦଶରଥପୁର", "Korei": "କୋରେଇ", "Rasulpur": "ରସୁଲପୁର", "Sukinda": "ସୁକିଣ୍ଡା", "Kirmira": "କିର୍ମିରା", "Kolabira": "କୋଲାବିରା", "Laikera": "ଲାଇକେରା", "Lakhanpur": "ଲଖନପୁର", "Bhawanipatna": "ଭବାନୀପାଟଣା", "Dharamagarh": "ଧର୍ମଗଡ଼", "Golamunda": "ଗୋଲାମୁଣ୍ଡା", "Jayapatna": "ଜୟପାଟଣା", "Junagarh": "ଜୁନାଗଡ଼", "Kalampur": "କଲମପୁର", "Karlamunda": "କର୍ଲାମୁଣ୍ଡା", "Kesinga": "କେସିଙ୍ଗା", "Kokasara": "କୋକାସରା", "Lanjigarh": "ଲାଞ୍ଜିଗଡ଼", "Madanpur Rampur": "ମଦନପୁର ରାମପୁର", "Narala": "ନାରାଲା", "Thuamul Ram Pur": "ଥୁଆମୁଲ ରାମ ପୁର", "Baliguda": "ବାଲିଗୁଡ଼ା", "Chakapad": "ଚକାପାଦ", "Daringibadi": "ଦାରିଙ୍ଗିବାଡି", "G.Udayagiri": "ଜି. ଉଦୟଗିରି", "Khajuripada": "ଖଜୁରିପଡ଼ା", "K.Nuagan": "କେ.ନୁଆଗାନ", "Kotagarh": "କୋଟାଗଡ଼", "Phiringia": "ଫିରିଙ୍ଗିଆ", "Phulbani": "ଫୁଲବାଣୀ", "Raikia": "ରାଇକିଆ", "Tikabali": "ଟିକାବାଲି", "Tumudibandh": "ତୁମୁଡିବନ୍ଧ", "Aul": "ଆଉଲ୍", "Derabish": "ଡେରାବିଶ୍", "Garadapur": "ଗରଦପୁର", "Kendrapada": "କେନ୍ଦ୍ରାପଡା", "Mahakalapada": "ମହାକାଳପଡ଼ା", "Marsaghai": "ମାର୍ସାଘାଇ", "Pattamundai": "ପଟ୍ଟାମୁଣ୍ଡାଇ", "Rajkanika": "ରାଜକନିକା", "Rajnagar": "ରାଜନଗର", "Anandapur": "ଆନନ୍ଦପୁର", "Bansapal": "ବନସାପାଲ", "Champua": "ଚମ୍ପୁଆ", "Ghasipura": "ଘସିପୁରା", "Ghatgaon": "ଘଟଗାଁ", "Harichadanpur": "ହରିଚଦନପୁର", "Hatadihi": "ହାଟାଡିହି", "Jhumpura": "ଝୁମ୍ପୁରା", "Joda": "ଜୋଡା", "Kendujhar Sadar": "କେନ୍ଦୁଝର ସଦର", "Patana": "ପାଟାନା", "Saharapada": "ସହରାପଡ଼ା", "Telkoi": "ତେଲକୋଇ", "Balianta": "ବାଲିଅନ୍ତା", "Balipatna": "ବାଲିପାଟଣା", "Banapur": "ବାଣପୁର", "Begunia": "ବେଗୁନିଆ", "Bhubaneswar": "ଭୁବନେଶ୍ୱର", "Bolagarh": "ବୋଲାଗଡ଼", "Chilika": "ଚିଲିକା", "Jatni": "ଜଟଣୀ", "Tangi": "ଟାଙ୍ଗୀ", "Bandhugaon": "ବନ୍ଧୁଗାଁଓ", "Boipariguda": "ବୋଇପାରିଗୁଡ଼ା", "Borigumma": "ବୋରିଗୁମ୍ମା", "Dasamantapur": "ଦଶମନ୍ତପୁର", "Jeypore": "ଜୟପୁର", "Kotpad": "କୋଟପାଡ୍", "Kundura": "କୁନ୍ଦୁରା", "Lamtaput": "ଲମତାପୁଟ", "Laxmipur": "ଲକ୍ଷ୍ମୀପୁର", "Nandapur": "ନନ୍ଦପୁର", "Narayan Patana": "ନାରାୟଣ ପାଟନା", "Pottangi": "ପୋଟାଙ୍ଗି", "Semiliguda": "ସେମିଲିଗୁଡ଼ା", "Chitrakonda": "ଚିତ୍ରକୋଣ୍ଡା", "Kalimela": "କାଲିମେଳା", "Khairaput": "ଖଇରାପୁଟ", "Korukonda": "କୋରୁକୋଣ୍ଡା |", "Mathili": "ମାଥିଲି", "Podia": "ପୋଡିଆ", "Badasahi": "ବାଦାସାହି", "Bahalda": "ବାହାଲଦା", "Bangriposi": "ବାଙ୍ଗ୍ରିପୋସି", "Baripada": "ବାରିପଦା", "Betnoti": "ବେଟନୋଟି", "Bijatala": "ବିଜାତଳା", "Bisoi": "ବିସୋଇ", "Gopabandhunagar": "ଗୋପବନ୍ଧୁନଗର", "Jamda": "ଜାମଡା", "Joshipur": "ଜୋଶୀପୁର", "Kaptipada": "କପ୍ତିପଦା", "Karanjia": "କରଞ୍ଜିଆ |", "Khunta": "ଖୁଣ୍ଟା", "Kuliana": "କୁଲିଆନା", "Kusumi": "କୁସୁମି", "Morada": "ମୋରାଡା", "Rairangpur": "ରାଇରଙ୍ଗପୁର", "Raruan": "ରାରୁଆନ୍", "Rasgovindpur": "ରାସଗୋବିନ୍ଦପୁର", "Samakhunta": "ସମାଖୁଣ୍ଟା", "Saraskana": "ସାରାସକାନା", "Sukruli": "ସୁକ୍ରୁଲି", "Suliapada": "ସୁଲିଆପଡ଼ା", "Thakurmunda": "ଠାକୁରମୁଣ୍ଡା", "Tiring": "କ୍ଳାନ୍ତକାରୀ", "Udala": "ଉଦଳା", "Chandahandi": "ଚନ୍ଦାହାଣ୍ଡି", "Dabugam": "ଡାବୁଗାମ୍", "Jharigam": "ଝରିଗାମ", "Kosagumuda": "କୋସାଗୁମୁଡା", "Nandahandi": "ନନ୍ଦାହାଣ୍ଡି", "Papadahandi": "ପାପଡାହାଣ୍ଡି", "Raighar": "ରାଇଘର", "Tentulikhunti": "ତେନ୍ତୁଲିଖୁଣ୍ଟି", "Umerkote": "ଉମରକୋଟ", "Bhapur": "ଭାପୁର", "Dasapalla": "ଦଶପଲ୍ଲା", "Gania": "ଗାନିଆ", "Khandapara": "ଖଣ୍ଡପଡ଼ା", "Nuagaon": "ନୂଆଗାଁ", "Odagaon": "ଓଡଗାଁ", "Ranapur": "ରାଣାପୁର", "Boden": "ବୋଡେନ୍", "Khariar": "ଖରିଆର", "Komna": "କୋମନା", "Sinapali": "ସିନାପାଲି", "Astaranga": "ଅସ୍ତରଙ୍ଗା", "Brahmagiri": "ବ୍ରହ୍ମଗିରି", "Delanga": "ଡେଲାଙ୍ଗା", "Gop": "ଗପ୍", "Kakat Pur": "କାକଟ ପୁର", "Kanas": "କାନାସ୍", "Krushnaprasad": "କୃଷ୍ଣପ୍ରସାଦ", "Nimapada": "ନିମାପଡ଼ା", "Pipili": "ପିପିଲି", "Sadar": "ସଦର", "Satyabadi": "ସତ୍ୟବାଦୀ", "Bissamcuttack": "ବିଷମକଟକ", "Chandrapur": "ଚନ୍ଦ୍ରପୁର", "Gudari": "ଗୁଡାରି", "Gunupur": "ଗୁଣୁପୁର", "Kalyansingpur": "କଲ୍ୟାଣସିଂପୁର", "Kasipur": "କାସିପୁର", "Kolnara": "କୋଲନାରା", "Muniguda": "ମୁନିଗୁଡ଼ା", "Padmapur": "ପଦ୍ମପୁର", "Ramanaguda": "ରାମନାଗୁଡ଼ା", "Bamra": "ବାମରା", "Dhankauda": "ଧନକୌଡା", "Jamankira": "ଜାମାନକିରା", "Jujomura": "ଜୁଜୋମୁରା", "Kuchinda": "କୁଚିଣ୍ଡା", "Maneswar": "ମାନେଶ୍ୱର", "Naktideul": "ନାକଟିଡେଉଲ୍", "Rairakhol": "ରାଇରାଖୋଲ", "Rengali": "ରେଙ୍ଗାଲି", "Binika": "ବିନିକା", "Birmaharajpur": "ବୀରମହାରାଜପୁର", "Dunguripali": "ଡୁଙ୍ଗୁରିପାଲି", "Tarbha": "ତରଭା", "Ullunda": "ଉଲୁଣ୍ଡା", "Balisankara": "ବାଲିଶଙ୍କରା", "Bargaon": "ବରଗାଁଓ", "Bisra": "ବିସ୍ରା", "Bonaigarh": "ବୋନାଇଗଡ଼", "Gurundia": "ଗୁରୁଣ୍ଡିଆ", "Hemgir": "ହେମଗିର", "Koida": "କୋଇଡା", "Kuarmunda": "କୁଆରମୁଣ୍ଡା", "Kutra": "କୁତ୍ରା", "Lahunipara": "ଲହୁଣୀପାରା", "Lathikata": "ଲାଠିକଟା", "Lephripara": "ଲେଫ୍ରିପାରା", "Rajgangpur": "ରାଜଗାଙ୍ଗପୁର", "Subdega": "ସବଡେଗା", "Tangarpali": "ଟାଙ୍ଗାରପାଲି", "Athamallik": "ଆଥାମଲ୍ଲିକ", "Asika": "ଆସିକା", "Umarkote": "ଉମାରକୋଟ", "Odogaon": "ଓଡୋଗାଁ", "Kantabanji": "କଣ୍ଟାବାଞ୍ଜି", "Kavisurjyanagar": "କବିସୂର୍ଯ୍ୟନଗର", "Kendujhar": "କେନ୍ଦୁଝର", "Kochinda": "କୋଚିଣ୍ଡା", "Kodala": "କୋଡାଲା", "Konark": "କୋଣାର୍କ", "Khandapada": "ଖଣ୍ଡପଡ଼ା", "Khariar Road": "ଖରିଆର ରୋଡ୍", "Khalikote": "ଖାଲିକୋଟ", "Gopalpur": "ଗୋପାଳପୁର", "Choudwar": "ଚୌଦ୍ୱାର", "Chhatrapur": "ଛତ୍ରପୁର", "Jatani": "ଜଟଣୀ", "Jajapur": "ଜାଜାପୁର", "G. Udayagiri": "ଜି. ଉଦୟଗିରି", "Jeypur": "ଜୟପୁର", "Talcher": "ତାଲଚେର", "Tusura": "ତୁସୁରା", "Debagarh": "ଦେବଗଡ଼", "Dharmagarh": "ଧର୍ମଗଡ଼", "Nabarangapur": "ନବରଙ୍ଗପୁର", "Nilagiri": "ନୀଳଗିରି", "Paralakhemundi": "ପାରଳାଖେମୁଣ୍ଡି", "Paradeep": "ପାରାଦୀପ", "Purusottampur": "ପୁରୁଷୋତ୍ତମପୁର", "Polasara": "ପୋଲାସରା", "Phulabani": "ଫୁଲବାଣୀ", "Barapali": "ବରପାଲି", "Barbil": "ବାର୍ବିଲ୍", "Balimela": "ବାଲିମେଲା", "Balugaon": "ବାଲୁଗାଁ", "Basudebpur": "ବାସୁଦେବପୁର", "Biramitrapur": "ବୀରମିତ୍ରପୁର", "Belpahar": "ବେଲପାହାଡ଼", "Boudhgarh": "ବୌଦ୍ଧଗଡ଼", "Brajarajnagar": "ବ୍ରଜରାଜନଗର", "Berhampur": "ବ୍ରହ୍ମପୁର", "Vyasanagar": "ବ୍ୟାସନଗର", "Rambha": "ରମ୍ଭା", "Raurkela": "ରାଉରକେଲା", "Rajagangapur": "ରାଜଗଙ୍ଗାପୁର", "Redhakhol": "ରେଢାଖୋଲ", "Sunabeda": "ସୁନାବେଡା", "Sonapur": "ସୋନପୁର", "Health Facilities": "ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର", "Home": "ଘର", "Transit": "ଯାତ୍ରାପଥରେ", "Antenatal": "ପ୍ରସବପୂର୍ବ", "Intranatal": "ପ୍ରସବକାଳୀନ", "Post natal": "ପ୍ରସବୋତ୍ତର", "Post Abortion": "ଗର୍ଭପାତ ପରେ", "Primary Health Centre (PHC)": "ପ୍ରାଥମିକ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର (PHC)", "Community Health Centre (CHC)": "ସାମୁଦାୟିକ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର (CHC)", "Sub-divisional / Area hospital (SDH)": "ଉପ-ବିଭାଗୀୟ / ଏରିଆ ଡାକ୍ତରଖାନା (SDH)", "District Headquarters Hospital (DHH)": "ଜିଲ୍ଲା ମୁଖ୍ୟାଳୟ ଡାକ୍ତରଖାନା (DHH)", "Medical College & Hospital": "ମେଡିକାଲ୍ କଲେଜ ଓ ଡାକ୍ତରଖାନା", "Urban PHC (UPHC)": "ସହରାଞ୍ଚଳ PHC (UPHC)", "Urban Health & Wellness Centre (UHWC)": "ସହରାଞ୍ଚଳ ସ୍ୱାସ୍ଥ୍ୟ ଓ ଆରୋଗ୍ୟ କେନ୍ଦ୍ର (UHWC)", "Ayushman Arogya Mandir / AHWC": "ଆୟୁଷ୍ମାନ ଆରୋଗ୍ୟ ମନ୍ଦିର / AHWC", "Sub centre (SC)": "ଉପ-କେନ୍ଦ୍ର (SC)", "AYUSH college / hospital": "ଆୟୁଷ କଲେଜ / ଡାକ୍ତରଖାନା", "Other / private facility (not in list)": "ଅନ୍ୟ / ବେସରକାରୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର (ତାଲିକାରେ ନାହିଁ)", "Haemorrhage": "ରକ୍ତସ୍ରାବ", "Sepsis": "ସେପ୍ସିସ୍ (ସଂକ୍ରମଣ)", "Abortion": "ଗର୍ଭପାତ", "Obstructed Labour": "ବାଧାପ୍ରାପ୍ତ ପ୍ରସବ", "Hypertensive disorders": "ଉଚ୍ଚ ରକ୍ତଚାପ ଜନିତ ରୋଗ", "Anaemia": "ରକ୍ତହୀନତା", "Other": "ଅନ୍ୟାନ୍ୟ", "Yes": "ହଁ", "No": "ନା", "General": "ସାଧାରଣ", "SC": "ଅନୁସୂଚିତ ଜାତି (SC)", "ST": "ଅନୁସୂଚିତ ଜନଜାତି (ST)", "OBC": "OBC", "Public facility": "ସରକାରୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର", "Private facility": "ବେସରକାରୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର", "In transit": "ଯାତ୍ରାପଥରେ", "Neo natal (up to 28 days)": "ନବଜାତ (୨୮ ଦିନ ପର୍ଯ୍ୟନ୍ତ)", "Infant (29 days – under 1 year)": "ଶିଶୁ (୨୯ ଦିନ – ୧ ବର୍ଷରୁ କମ୍)", "Child (1 – under 5 years)": "ପିଲା (୧ – ୫ ବର୍ଷରୁ କମ୍)", "Bacterial meningites": "ବ୍ୟାକ୍ଟେରିଆ ଜନିତ ମେନିଞ୍ଜାଇଟିସ୍", "Birth asphixia": "ଜନ୍ମକାଳୀନ ଶ୍ୱାସରୋଧ", "Diarrhoea": "ଝାଡ଼ାବାନ୍ତି (ଡାଏରିଆ)", "Jaundice": "ଜଣ୍ଡିସ୍", "Pre term": "ଅକାଳ ପ୍ରସବ", "LBW (OTHER THAN PRETERM)": "କମ୍ ଜନ୍ମ ଓଜନ (ଅକାଳ ପ୍ରସବ ବ୍ୟତୀତ)", "LBW (WITH PRETERM)": "କମ୍ ଜନ୍ମ ଓଜନ (ଅକାଳ ପ୍ରସବ ସହିତ)", "Malaria": "ମ୍ୟାଲେରିଆ", "Malnutrition and other nutritional deficiencies": "ଅପପୁଷ୍ଟି ଓ ଅନ୍ୟ ପୋଷଣ ଅଭାବ", "Measles": "ହାମ", "Pneumonia": "ନିମୋନିଆ", "Respiratory distress of newborn": "ନବଜାତଙ୍କ ଶ୍ୱାସକଷ୍ଟ", "Septisemia": "ରକ୍ତ ସଂକ୍ରମଣ (ସେପ୍ଟିସେମିଆ)", "Tuberculosis": "ଯକ୍ଷ୍ମା", "Other bleeding disorders": "ଅନ୍ୟ ରକ୍ତସ୍ରାବ ରୋଗ", "Other congenital malformations": "ଅନ୍ୟ ଜନ୍ମଗତ ବିକୃତି", "Illiterate": "ଅଶିକ୍ଷିତ", "Primary (up to class 5)": "ପ୍ରାଥମିକ (୫ମ ଶ୍ରେଣୀ ପର୍ଯ୍ୟନ୍ତ)", "Upper primary (class 6–8)": "ଉଚ୍ଚ ପ୍ରାଥମିକ (୬–୮ ଶ୍ରେଣୀ)", "Secondary (class 9–10)": "ମାଧ୍ୟମିକ (୯–୧୦ ଶ୍ରେଣୀ)", "Higher secondary (class 11–12)": "ଉଚ୍ଚ ମାଧ୍ୟମିକ (୧୧–୧୨ ଶ୍ରେଣୀ)", "Graduate and above": "ସ୍ନାତକ ଓ ତଦୂର୍ଦ୍ଧ୍ୱ", "Complete as per age": "ବୟସ ଅନୁସାରେ ସମ୍ପୂର୍ଣ୍ଣ", "Incomplete / partial": "ଅସମ୍ପୂର୍ଣ୍ଣ", "Not immunised": "ଟୀକାକରଣ ହୋଇନାହିଁ", "Not applicable (too young)": "ପ୍ରଯୁଜ୍ୟ ନୁହେଁ (ଅତି ଛୋଟ)", "Severe anaemia": "ଗୁରୁତର ରକ୍ତହୀନତା", "Hypertension / pre-eclampsia / eclampsia": "ଉଚ୍ଚ ରକ୍ତଚାପ / ପ୍ରି-ଇକ୍ଲାମ୍ପସିଆ / ଇକ୍ଲାମ୍ପସିଆ", "Gestational diabetes": "ଗର୍ଭକାଳୀନ ମଧୁମେହ", "Antepartum haemorrhage": "ପ୍ରସବପୂର୍ବ ରକ୍ତସ୍ରାବ", "Previous caesarean (LSCS)": "ପୂର୍ବ ସିଜାରିଆନ୍ (LSCS)", "Bad obstetric history (stillbirth / abortion / neonatal death)": "ଖରାପ ପ୍ରସୂତି ଇତିହାସ", "Multiple pregnancy": "ଯମଜ / ବହୁ ଗର୍ଭ", "Malpresentation / malposition": "ଭୁଲ ଭ୍ରୁଣ ସ୍ଥିତି", "Teenage pregnancy (below 19 years)": "କିଶୋରୀ ଗର୍ଭ (୧୯ ବର୍ଷରୁ କମ୍)", "Elderly pregnancy (35 years and above)": "ଅଧିକ ବୟସ ଗର୍ଭ (୩୫ ବର୍ଷ ଓ ତଦୂର୍ଦ୍ଧ୍ୱ)", "Grand multipara (para 5 or more)": "ବହୁ ପ୍ରସୂତା (ପାରା ୫ ବା ଅଧିକ)", "Heart disease": "ହୃଦ୍ରୋଗ", "Infection (HIV / TB / malaria / hepatitis)": "ସଂକ୍ରମଣ (HIV / TB / ମ୍ୟାଲେରିଆ / ହେପାଟାଇଟିସ୍)"};
   var PAT = [["^Block: (.+)$", "ବ୍ଲକ୍: $1"], ["^(.+) district$", "$1 ଜିଲ୍ଲା"], ["^(.+) block, (.+) district$", "$1 ବ୍ଲକ୍, $2 ଜିଲ୍ଲା"], ["^(.+) \\((.+)\\), (.+) district$", "$1 ($2), $3 ଜିଲ୍ଲା"], ["^Facility logins — (.+) district$", "ସଂସ୍ଥା ଲଗଇନ୍ — $1 ଜିଲ୍ଲା"], ["^Loaded (\\d+) facility login\\(s\\) for (.+)\\. Choose your facility and enter your passcode\\.$", "$2 ପାଇଁ $1 ସଂସ୍ଥା ଲଗଇନ୍ ଲୋଡ୍ ହେଲା। ଆପଣଙ୍କ ସଂସ୍ଥା ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ।"], ["^Created (\\d+) facility login\\(s\\)\\. Keep the passcode list private and share each passcode only with its facility\\.$", "$1 ସଂସ୍ଥା ଲଗଇନ୍ ତିଆରି ହେଲା। ପାସକୋଡ୍ ତାଲିକା ଗୋପନ ରଖନ୍ତୁ ଏବଂ ପ୍ରତ୍ୟେକ ପାସକୋଡ୍ କେବଳ ସଂସ୍ଥାକୁ ଦିଅନ୍ତୁ।"], ["^Creating (\\d+) / (\\d+)…$", "ତିଆରି ହେଉଛି $1 / $2…"], ["^Creating…$", "ତିଆରି ହେଉଛି…"], ["^(\\d+) passcode\\(s\\) ready$", "$1 ପାସକୋଡ୍ ପ୍ରସ୍ତୁତ"], ["^(\\d+) facilit(?:y|ies)$", "$1 ସଂସ୍ଥା"], ["^Showing the first (\\d+) of (\\d+) — use the search to narrow down\\.$", "$2 ମଧ୍ୟରୁ ପ୍ରଥମ $1 ଦେଖାଯାଉଛି — ସୀମିତ କରିବାକୁ ଖୋଜା ବ୍ୟବହାର କରନ୍ତୁ।"], ["^Imported (\\d+) passcode\\(s\\) for (.+?)( \\((\\d+) not matched\\))?\\. Now create the logins file\\.$", "$2 ପାଇଁ $1 ପାସକୋଡ୍ ଆମଦାନି ହେଲା$3। ବର୍ତ୍ତମାନ ଲଗଇନ୍ ଫାଇଲ୍ ତିଆରି କରନ୍ତୁ।"], ["^Passcodes need 6\\+ characters: (.+)$", "ପାସକୋଡ୍ ଅତିକମରେ 6 ଅକ୍ଷର ହେବା ଦରକାର: $1"], ["^Failed: (.+)$", "ବିଫଳ: $1"]].map(function(p){ return [new RegExp(p[0]), p[1]]; });
   var KEY='mp_lang', LANG='en';
   try{ LANG = localStorage.getItem(KEY)==='or' ? 'or' : 'en'; }catch(e){}
