@@ -62,7 +62,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     --bg:#0f1420; --panel:#161d2e; --panel2:#1c2438; --border:#2a3450;
     --text:#e8ecf5; --muted:#8a94ac; --accent:#5b8def; --accent2:#e2645c; --accent3:#8b5cf6;
     --good:#3fbf7f; --warn:#e8b84b;
+    --rec-bg:#0e3a40; --rec-bg2:#12474f; --rec-border:#2f8a96;
   }
+  /* Records tab: its own teal colour so it stands apart from the blue-grey panels */
+  .cloud-row button[id$="-cloud-records"]{background:var(--rec-bg2);border-color:var(--rec-border);color:#e6fbff;}
+  [id$="-records-panel"] input[type=search]{background:#fff;color:#111827;}
   *{box-sizing:border-box;}
   html{-webkit-text-size-adjust:100%;}
   body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
@@ -3634,7 +3638,7 @@ function makeModule(containerId, opts){
           : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(my))+eb+'</tr>';
       }).join('');
       const scope = BLOCK_LOCK ? (BLOCK_LOCK.name+' block') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'all districts');
-      panel.innerHTML = `<div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--panel2);">
+      panel.innerHTML = `<div style="border:1px solid var(--rec-border);border-radius:12px;padding:10px;background:var(--rec-bg);">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
           <b style="font-size:14px;">📋 ${isMdrM?'MDR':'CDR'} records — ${escapeHtml(scope)}</b>
           <input type="search" id="${containerId}-rp-q" value="${escapeHtml(q)}" placeholder="🔍 Filter records…" autocomplete="off" style="flex:1 1 220px;min-width:180px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
@@ -3645,7 +3649,7 @@ function makeModule(containerId, opts){
           <button type="button" class="dl-tab" id="${containerId}-rp-clear">Clear selection</button>
           <button type="button" class="dl-tab" id="${containerId}-rp-delsel" style="color:#c0392b;border-color:#c0392b;">🗑 Delete selected (0)</button>
         </div>` : ''}
-        ${all.length ? `<div style="overflow:auto;max-height:420px;border:1px solid var(--border);border-radius:8px;"><table style="border-collapse:collapse;font-size:12.5px;white-space:nowrap;"><thead style="position:sticky;top:0;background:var(--panel2);"><tr>${canDelete()?`<th style="padding:6px 8px;"><input type="checkbox" id="${containerId}-rp-all" title="Select / unselect the rows shown"></th>`:''}${head.map(th).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+        ${all.length ? `<div style="overflow:auto;max-height:420px;border:1px solid var(--rec-border);border-radius:8px;"><table style="border-collapse:collapse;font-size:12.5px;white-space:nowrap;"><thead style="position:sticky;top:0;background:var(--rec-bg2);"><tr>${canDelete()?`<th style="padding:6px 8px;"><input type="checkbox" id="${containerId}-rp-all" title="Select / unselect the rows shown"></th>`:''}${head.map(th).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
         <div style="color:var(--muted);font-size:12px;margin-top:6px;">${idx.length>LIMIT?'Showing first '+LIMIT+' of ':''}${idx.length.toLocaleString()} record${idx.length===1?'':'s'}${words.length?' matching':''}. After editing, click <b>☁ Save records to cloud</b> to keep the changes. Tick records and click <b>🗑 Delete selected</b> (or use <b>🗑 Delete</b> on one row): deleted records are removed from the cloud immediately.</div>`
         : `<div class="empty" style="padding:10px 0;">No records loaded yet — upload a line-listing or use ☁ Load latest.</div>`}
       </div>`;
