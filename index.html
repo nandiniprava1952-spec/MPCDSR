@@ -3522,7 +3522,41 @@ function makeModule(containerId, opts){
     }
     finally{ cloudBusy = false; }
   }
-  async function cloudLoadModule(silent){
+  // ---- SNCU / NBSU deaths linked from the SNCU app (CDR only). The MPCDSR Apps Script keeps them in their own
+  // server-side file (action 'linked'), so a district's own "Save records" can never overwrite them. They are merged
+  // in after every cloud load: records already present (same SNCU id, or the same mother + date of death at the same
+  // facility entered by hand) are skipped, and the login's district / block / facility scope still applies.
+  async function cdrMergeLinked(){
+    if(containerId!=='cdr' || !cloudReady()) return;
+    try{
+      const j = await recCall('linked', { module: 'cdr' });
+      let add = (j && j.records) || [];
+      if(!add.length) return;
+      add = districtLockRecords(add);
+      if(BLOCK_LOCK || FACILITY_LOCK) add = add.filter(mpInScope);
+      const have = (lineListing && lineListing.records) || [];
+      const nk = x=>String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const ids = new Set(), byKey = new Map();
+      have.forEach(r=>{
+        if(r.srcId) ids.add(String(r.srcId));
+        const k = nk(r.motherName)+'|'+String(r.date||'').trim();
+        let a = byKey.get(k); if(!a){ a=[]; byKey.set(k,a); } a.push(r.facilityName);
+      });
+      const fresh = add.filter(r=>{
+        if(ids.has(String(r.srcId))) return false;
+        const same = byKey.get(nk(r.motherName)+'|'+String(r.date||'').trim());
+        return !(same && same.some(f=>facSame(f, r.facilityName)));
+      });
+      if(!fresh.length) return;
+      if(!lineListing || !lineListing.records){ lineListing = { sheetName:'SNCU/NBSU linked deaths', records:[] }; }
+      fresh.forEach(r=>lineListing.records.push(r));
+      lineListingRebuildAndRender();
+      setCloudStatus('Showing '+lineListing.records.length.toLocaleString()+' records, including '+fresh.length.toLocaleString()+' death(s) linked from the SNCU/NBSU app.');
+      document.dispatchEvent(new CustomEvent('mp-rec-changed',{detail:containerId}));
+    }catch(e){ /* the link is optional: never block the dashboard */ console.warn('SNCU link:', e && e.message); }
+  }
+  async function cloudLoadModule(silent){ await cloudLoadModuleCore(silent); await cdrMergeLinked(); }
+  async function cloudLoadModuleCore(silent){
     if(!cloudReady() || cloudBusy) return;
     // SNCU / NBSU logins have no MDR module: don't download maternal records at all
     if(containerId==='mdr' && FACILITY_LOCK && (FACILITY_LOCK.kind==='SNCU' || FACILITY_LOCK.kind==='NBSU')) return;
