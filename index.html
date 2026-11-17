@@ -2538,7 +2538,7 @@ function mpOpenFacilityManager(){
   };
 }
 window.mpOpenFacilityManager = mpOpenFacilityManager;
-function mpDistrictLogout(){ try{ sessionStorage.removeItem('mp_district_auth'); }catch(e){} location.reload(); }
+function mpDistrictLogout(){ try{ sessionStorage.removeItem('mp_district_auth'); localStorage.removeItem('mp_district_auth'); }catch(e){} location.reload(); }
 // ---- Cloud speed-ups: (1) several requests in flight at once, (2) per-district cache in this browser ----
 const CLOUD_MAX_PARALLEL = 10;          // simultaneous requests to the Apps Script (it copes with a handful)
 const CLOUD_LOCAL_CACHE  = true;       // keep downloaded district records in this browser (IndexedDB); set false to turn off
@@ -2687,7 +2687,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
       if(hash!==DISTRICT_ACCESS[c].h){ err.textContent='Incorrect passcode.'; return; }
       DISTRICT_LOCK={code:c,name:DISTRICT_ACCESS[c].name}; BLOCK_LOCK=null; FACILITY_LOCK=null; CLOUD_AUTH={district:c,pass:p};
     }
-    try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c,h:hash,p})); }catch(e){}
+    try{ (function(k,v){try{localStorage.setItem(k,v)}catch(_){sessionStorage.setItem(k,v)}})('mp_district_auth', JSON.stringify({c,h:hash,p})); }catch(e){}
     startApp();
   }
   // ---- block login (same layout as SamMpurna): district -> optional block -> passcode
@@ -2723,7 +2723,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     if(!dpass){ err.textContent='Incorrect passcode.'; return; }
     DISTRICT_LOCK = {code, name:DISTRICT_ACCESS[code].name}; BLOCK_LOCK = {name:entry.block};
     CLOUD_AUTH = {district:code, pass:dpass};
-    try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c:code, b:entry.block, bh:entry.h, p:dpass})); }catch(_){}
+    try{ (function(k,v){try{localStorage.setItem(k,v)}catch(_){sessionStorage.setItem(k,v)}})('mp_district_auth', JSON.stringify({c:code, b:entry.block, bh:entry.h, p:dpass})); }catch(_){}
     err.textContent=''; startApp();
   }
   async function tryFacilityLogin(code, kind, key, p){
@@ -2737,7 +2737,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
     if(!dpass){ err.textContent='Incorrect passcode.'; return; }
     DISTRICT_LOCK = {code, name:DISTRICT_ACCESS[code].name}; BLOCK_LOCK = null; FACILITY_LOCK = mpMakeFacLock(code, entry);
     CLOUD_AUTH = {district:code, pass:dpass};
-    try{ sessionStorage.setItem('mp_district_auth', JSON.stringify({c:code, f:{k:entry.kind, n:(entry.kind==='FACILITY'?entry.fc:entry.name), h:(entry.h||entry.ct)}, p:dpass})); }catch(_){}
+    try{ (function(k,v){try{localStorage.setItem(k,v)}catch(_){sessionStorage.setItem(k,v)}})('mp_district_auth', JSON.stringify({c:code, f:{k:entry.kind, n:(entry.kind==='FACILITY'?entry.fc:entry.name), h:(entry.h||entry.ct)}, p:dpass})); }catch(_){}
     err.textContent=''; startApp();
   }
   window.mpBlockLogin = async function(code, block, pass){   // also used for testing
@@ -2751,7 +2751,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   document.getElementById('mpgOffline').onclick = function(e){
     e.preventDefault();
     DISTRICT_LOCK=null; BLOCK_LOCK=null; FACILITY_LOCK=null; CLOUD_AUTH=null;
-    try{ sessionStorage.removeItem('mp_district_auth'); }catch(_){}
+    try{ sessionStorage.removeItem('mp_district_auth'); localStorage.removeItem('mp_district_auth'); }catch(_){}
     document.getElementById('mpg').style.display='none';
     document.getElementById('mplockbar').style.display='flex';document.querySelector('header').classList.add('has-lock');
     document.getElementById('mplockName').textContent='Offline mode (no cloud) — data stays on this device';
@@ -2770,7 +2770,7 @@ function cloudReady(){ if(!REC_URL) return false; if(!CLOUD_AUTH || !CLOUD_AUTH.
   })();
   document.getElementById('mpgPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   try{
-    const saved = JSON.parse(sessionStorage.getItem('mp_district_auth')||'null');
+    const saved = JSON.parse(localStorage.getItem('mp_district_auth')||sessionStorage.getItem('mp_district_auth')||'null');
     if(saved && saved.f){
       const en = mpFacFindEntry(saved.c, saved.f.k, saved.f.n);
       if(en && DISTRICT_ACCESS[saved.c] && (en.h||en.ct)===saved.f.h && saved.p){ DISTRICT_LOCK={code:saved.c,name:DISTRICT_ACCESS[saved.c].name}; BLOCK_LOCK=null; FACILITY_LOCK=mpMakeFacLock(saved.c,en); CLOUD_AUTH={district:saved.c,pass:saved.p}; startApp(); return; }
@@ -6391,10 +6391,12 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 <div id="mp-upd-toast" role="status" hidden><span aria-hidden="true">✔</span><span>Updated to the latest version</span></div>
 <style>
   /* Status + install badges: top-left on the login/cover page, bottom-right once inside the dashboard */
-  #mp-badges{position:fixed;z-index:10060;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
-    left:calc(12px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top));
+  #mp-badges{position:fixed;z-index:9000;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+    right:calc(12px + env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top));
     font:600 12.5px/1 'Segoe UI',Roboto,Arial,sans-serif;}
-  body:not(:has(#mpg:not([style*="display: none"]))) #mp-badges{left:auto;top:auto;right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));flex-direction:column-reverse;align-items:flex-end;}
+  body:has(#mpg:not([style*="display: none"])) #mp-badges{z-index:10060;}
+  #mp-install{position:fixed;left:calc(12px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top));}
+  body:not(:has(#mpg:not([style*="display: none"]))) #mp-install{left:auto;top:auto;right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));}
   .mp-badge{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px;border-radius:999px;box-sizing:border-box;
     background:rgba(10,20,46,.74);color:#eaf2ff;border:1px solid rgba(190,215,255,.45);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.35);white-space:nowrap;}
@@ -6407,6 +6409,11 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   @keyframes mpPulse{50%{box-shadow:0 0 0 5px rgba(34,197,94,.12);}}
   @media(max-width:700px){ .mp-badge{min-height:32px;padding:0 11px;font-size:12px;} }
   @media(prefers-reduced-motion:reduce){ #mp-status.on .dot{animation:none;} }
+  #mp-status{min-height:26px;min-width:84px;padding:0 9px;justify-content:center;font-size:11.5px;pointer-events:none;}
+  #mp-status.off{color:#facc15;}
+  header #mplockbar{right:104px !important;max-width:calc(100% - 118px) !important;}
+  @media(max-width:700px){ #mp-badges{top:calc(15px + env(safe-area-inset-top));} }
+  @media print{ #mp-badges{display:none !important;} }
 </style>
 <div id="mp-badges">
   <div id="mp-status" class="mp-badge on" role="status" aria-live="polite"><span class="dot"></span><span id="mp-status-txt">Online</span></div>
