@@ -274,7 +274,6 @@ header.has-lock h1{margin-top:34px;}
 #mpg .lt-cloud{color:#cfe0fb;} #mpg .lt-cloud.ok{color:#9ff0bd;} #mpg .lt-cloud.warn{color:#ffd68a;}
 #mpg .lt-off a{color:var(--mp-accent);}
 #mpg .err{color:#ffb4b4;text-shadow:0 1px 2px rgba(0,0,0,.5);}
-body:has(#mpg:not([style*="display: none"])) #mpLangBtn{left:auto;right:calc(12px + env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top));bottom:auto;background:rgba(10,20,46,.72);border:1px solid rgba(190,215,255,.45);}
 /* phones & narrow windows: photo fills the screen, mother and child stay in view above a bottom sheet */
 @media(max-width:700px){
   #mpg{align-items:flex-end;justify-content:center;padding:0 12px calc(max(12px,env(safe-area-inset-bottom)) + 44px);
@@ -333,7 +332,7 @@ body:has(#mpg:not([style*="display: none"])) #mpLangBtn{left:auto;right:calc(12p
 </div>
 </div></div>
 <header>
-  <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-fac" id="mpFacMgr" style="display:none" onclick="mpOpenFacilityManager()" title="Create facility logins (SNCU/NBSU and all facilities) for this district">🏥 Facility logins</button><button type="button" class="lk-text" onclick="mpDistrictLogout()">Log out</button><button type="button" class="lk-icon" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
+  <div id="mplockbar"><span class="lk-view">Viewing: <b id="mplockName"></b></span><button type="button" class="lk-fac" id="mpFacMgr" style="display:none" onclick="mpOpenFacilityManager()" title="Create facility logins (SNCU/NBSU and all facilities) for this district">🏥 Facility logins</button></div>
   <h1 style="color: orange;">Maternal & Child Death Review — Dashboard</h1>
   <p>Upload the MDR line-listing workbook and/or the CDR abstract workbook to explore district-wise trends, causes, and reporting completeness.</p>
 </header>
@@ -6395,7 +6394,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     right:calc(12px + env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top));
     font:600 12.5px/1 'Segoe UI',Roboto,Arial,sans-serif;}
   body:has(#mpg:not([style*="display: none"])) #mp-badges{z-index:10060;}
-  #mp-install{position:fixed;left:calc(12px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top));}
+  #mp-install{position:fixed;left:calc(104px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top));}
   body:not(:has(#mpg:not([style*="display: none"]))) #mp-install{left:auto;top:auto;right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));}
   .mp-badge{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px;border-radius:999px;box-sizing:border-box;
     background:rgba(10,20,46,.74);color:#eaf2ff;border:1px solid rgba(190,215,255,.45);
@@ -6411,12 +6410,22 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   @media(prefers-reduced-motion:reduce){ #mp-status.on .dot{animation:none;} }
   #mp-status{min-height:26px;min-width:84px;padding:0 9px;justify-content:center;font-size:11.5px;pointer-events:none;}
   #mp-status.off{color:#facc15;}
-  header #mplockbar{right:104px !important;max-width:calc(100% - 118px) !important;}
+  /* Log out sits right after the Online/Offline pill (far top-right); only shown once logged in */
+  #mp-logout{display:none;cursor:pointer;font:inherit;font-weight:700;color:#f87171;min-height:26px;padding:0 11px;font-size:11.5px;}
+  body:has(#mplockbar[style*="display: flex"]) #mp-logout{display:inline-flex;}
+  #mp-logout:active{background:#2563eb;border-color:#2563eb;color:#fff;}
+  header #mplockbar{right:210px !important;max-width:calc(100% - 224px) !important;}
+  @media(max-width:700px){
+    #mp-logout .lo-txt{display:none;}
+    #mp-logout{width:32px;min-height:32px;padding:0;justify-content:center;}
+    header #mplockbar{right:150px !important;max-width:calc(100% - 162px) !important;}
+  }
   @media(max-width:700px){ #mp-badges{top:calc(15px + env(safe-area-inset-top));} }
   @media print{ #mp-badges{display:none !important;} }
 </style>
 <div id="mp-badges">
   <div id="mp-status" class="mp-badge on" role="status" aria-live="polite"><span class="dot"></span><span id="mp-status-txt">Online</span></div>
+  <button id="mp-logout" class="mp-badge" type="button" onclick="mpDistrictLogout()" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="lo-txt">Log out</span></button>
   <button id="mp-install" class="mp-badge" type="button" aria-label="Install MPCDSR app">&#128242; <span>Install app</span><span class="x" id="mp-install-x" role="button" aria-label="Dismiss">&#10005;</span></button>
 </div>
 <script>
@@ -6591,7 +6600,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     walk(document.body); btn.textContent = LANG==='or' ? 'English' : 'ଓଡ଼ିଆ';
   }
   var st=document.createElement('style');
-  st.textContent='body.lang-or,body.lang-or button,body.lang-or input,body.lang-or select{font-family:"Noto Sans Oriya","Nirmala UI","Kalinga",Segoe UI,Arial,sans-serif;}#mpLangBtn{position:fixed;left:10px;bottom:10px;z-index:10050;background:#1d6fb8;color:#fff;border:0;border-radius:18px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);min-height:0;width:auto;font-family:"Noto Sans Oriya","Nirmala UI",Segoe UI,Arial,sans-serif;}';
+  st.textContent='body.lang-or,body.lang-or button,body.lang-or input,body.lang-or select{font-family:"Noto Sans Oriya","Nirmala UI","Kalinga",Segoe UI,Arial,sans-serif;}#mpLangBtn{position:absolute;left:10px;top:10px;z-index:10050;background:#1d6fb8;color:#fff;border:0;border-radius:18px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);min-height:0;width:auto;font-family:"Noto Sans Oriya","Nirmala UI",Segoe UI,Arial,sans-serif;}@media(max-width:600px){#mpLangBtn{top:8px;left:10px;}}';
   document.head.appendChild(st);
   var btn=document.createElement('button'); btn.type='button'; btn.id='mpLangBtn'; btn.setAttribute('aria-label','Language / ଭାଷା'); btn.title='Language / ଭାଷା';
   btn.onclick=function(){ setLang(LANG==='or'?'en':'or'); };
