@@ -2982,34 +2982,26 @@ function mpKoboIst(iso){
   const t = Date.parse(iso); if(!t) return '—';
   return new Date(t).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})+' IST';
 }
-function mpKoboPanelHtml(j, mod){
+function mpKoboPanelHtml(j){
   const n = x=>(+x||0).toLocaleString();
-  const st = (j.stored && j.stored[mod]) || {total:0,asha:0,ward:0,latest:'',byBlock:{}};
-  let tot=st.total, asha=st.asha, ward=st.ward, latest=st.latest, scope='';
-  if(BLOCK_LOCK){                                   // block login: the cloud login is the district's, so narrow to this block here
-    tot=asha=ward=0; latest='';
-    Object.keys(st.byBlock||{}).forEach(k=>{ if(blockSame(k, BLOCK_LOCK.name)){ const e=st.byBlock[k]; tot+=e.n; asha+=e.asha; ward+=e.ward; if(e.latest>latest) latest=e.latest; } });
-    scope = BLOCK_LOCK.name+' block';
-  } else if(DISTRICT_LOCK) scope = DISTRICT_LOCK.name+' district';
-  else scope = 'all districts';
+  const sum = mod=>{                                // this login's totals for one module (a block login is narrowed to its block here)
+    const st = (j.stored && j.stored[mod]) || {total:0,asha:0,ward:0,byBlock:{}};
+    if(!BLOCK_LOCK) return {t:+st.total||0, a:+st.asha||0, w:+st.ward||0};
+    const r = {t:0,a:0,w:0};
+    Object.keys(st.byBlock||{}).forEach(k=>{ if(blockSame(k, BLOCK_LOCK.name)){ const e=st.byBlock[k]; r.t+=e.n; r.a+=e.asha; r.w+=e.ward; } });
+    return r;
+  };
+  const c = sum('cdr'), m = sum('mdr');
   const age = j.lastSync ? (Date.now()-Date.parse(j.lastSync))/60000 : Infinity;
   const cls = !j.lastSync ? '' : (age<=45 ? 'ok' : 'stale');           // the pull runs every 15 min, so >45 min means it is behind
-  const state = !j.lastSync ? 'No pull has run yet' : (cls==='ok' ? 'Syncing normally' : 'Last pull was a while ago');
-  let h = '<div class="kobo-head"><span class="kobo-dot '+cls+'"></span><span>Kobo sync</span><span class="kobo-state">'+state+' · '+scope+'</span>'
+  let h = '<div class="kobo-head"><span class="kobo-dot '+cls+'"></span><span>Kobo sync</span><span class="kobo-state"></span>'
         + '<button type="button" data-kobo-refresh>↻ Refresh</button></div><div class="kobo-grid">'
-        + '<div><div class="v sm">'+(j.lastSync ? mpKoboAgo(j.lastSync) : '—')+'</div><div class="l">Last sync'+(j.lastSync?' · '+mpKoboIst(j.lastSync)+(j.lastSyncFull?' (full re-pull)':''):'')+'</div></div>'
-        + '<div><div class="v">'+n(tot)+'</div><div class="l">'+mod.toUpperCase()+' reports from Kobo</div></div>'
-        + '<div><div class="v">'+n(asha)+'</div><div class="l">Reported by ASHA</div></div>'
-        + '<div><div class="v">'+n(ward)+'</div><div class="l">Reported by Ward member</div></div>'
-        + '<div><div class="v sm">'+(latest ? mpKoboIst(latest) : '—')+'</div><div class="l">Latest '+mod.toUpperCase()+' report received</div></div>';
-  if(j.role==='admin' && j.lastRun){
-    h += '<div><div class="v">'+n(j.lastRun.fetched)+'</div><div class="l">Fetched in last pull</div></div>'
-       + '<div><div class="v">'+n(j.lastRun.saved)+'</div><div class="l">Saved in last pull</div></div>'
-       + '<div><div class="v">'+n(j.lastRun.skipped)+'</div><div class="l">Skipped (not a usable MDR/CDR report)</div></div>'
-       + '<div><div class="v">'+n(j.districtsReporting)+'</div><div class="l">Districts with Kobo reports</div></div>';
-  }
-  h += '</div>';
-  if(!j.lastSync) h += '<div class="kobo-note">Kobo has not been pulled yet. The cloud script needs KOBO_ASSET_UID and KOBO_TOKEN, then <b>koboSyncAll</b> and <b>installKoboTrigger</b> run once.</div>';
+        + '<div><div class="v sm">'+(j.lastSync ? mpKoboAgo(j.lastSync) : 'Not yet')+'</div><div class="l">Last sync'+(j.lastSync?' · '+mpKoboIst(j.lastSync):'')+'</div></div>'
+        + '<div><div class="v">'+n(c.t)+'</div><div class="l">CDR reports from Kobo</div></div>'
+        + '<div><div class="v">'+n(m.t)+'</div><div class="l">MDR reports from Kobo</div></div>'
+        + '<div><div class="v">'+n(c.a+m.a)+'</div><div class="l">Reported by ASHA</div></div>'
+        + '<div><div class="v">'+n(c.w+m.w)+'</div><div class="l">Reported by Ward member</div></div>'
+        + '</div>';
   return h;
 }
 
@@ -3511,7 +3503,7 @@ function makeModule(containerId, opts){
     if(!koboPanelEl.innerHTML) koboPanelEl.innerHTML = '<div class="kobo-head"><span class="kobo-dot"></span><span>Kobo sync</span><span class="kobo-state">Checking…</span></div>';
     try{
       const j = await mpKoboSummary(!!force);
-      koboPanelEl.innerHTML = mpKoboPanelHtml(j, containerId);
+      koboPanelEl.innerHTML = mpKoboPanelHtml(j);
     }catch(e){
       const msg = String((e && e.message) || e);
       koboPanelEl.innerHTML = '<div class="kobo-head"><span class="kobo-dot"></span><span>Kobo sync</span><span class="kobo-state">Status unavailable</span><button type="button" data-kobo-refresh>↻ Retry</button></div>'
@@ -4796,6 +4788,11 @@ function makeModule(containerId, opts){
       // Reported by ASHA / Ward member — CDR and MDR Overview, from the Kobo pull's "Reporter designation".
       // Same month / district / block scope as the other line-listing cards. Shown once the loaded
       // records carry a designation (older line-listings without that column don't get two zero cards).
+      // "CDR / MDR reports from Kobo" — this module's Kobo-form reports inside the same month / district / block scope.
+      // They are already part of Total death; shown only when Kobo reports are loaded (never for facility / SNCU / NBSU logins).
+      if(lineListing && lineListing.records.some(isKoboRec)){
+        kpis.push({v: llScoped.filter(isKoboRec).length.toLocaleString(), l: containerId.toUpperCase()+' reports from Kobo'});
+      }
       if(lineListing && lineListing.records.some(r=>reporterRole(r))){
         kpis.push({v: llScoped.filter(r=>reporterRole(r)==='asha').length.toLocaleString(), l:'Reported by ASHA'});
         kpis.push({v: llScoped.filter(r=>reporterRole(r)==='ward').length.toLocaleString(), l:'Reported by Ward member'});
