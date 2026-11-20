@@ -189,6 +189,17 @@ header.has-lock h1{margin-top:34px;}
 .cloud-row button:active{opacity:.8;}
 .cloud-row .cloud-status{font-size:12px;color:var(--muted);flex:1 1 100%;overflow-wrap:anywhere;}
 .cloud-row .cloud-status:empty{display:none;}
+.kobo-panel{margin:0 0 14px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;}
+.kobo-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:600;}
+.kobo-dot{width:9px;height:9px;border-radius:50%;background:#6b7280;display:inline-block;}
+.kobo-dot.ok{background:#22c55e;} .kobo-dot.stale{background:#f59e0b;}
+.kobo-head .kobo-state{font-weight:400;font-size:12px;color:var(--muted);flex:1 1 auto;}
+.kobo-head button{padding:5px 10px;min-height:32px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:12px;font-weight:600;}
+.kobo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px;}
+.kobo-grid>div{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+.kobo-grid .v{font-size:17px;font-weight:700;line-height:1.2;} .kobo-grid .v.sm{font-size:13px;}
+.kobo-grid .l{font-size:11px;color:var(--muted);margin-top:2px;}
+.kobo-note{font-size:11px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere;} .kobo-note.err{color:#f87171;}
 </style>
 <style id="mp-login-css">
 /* Login page: original dark theme, with tabs (District / State | Block / SC / PHC | SNCU / NBSU) */
@@ -2951,6 +2962,57 @@ function mpAgeFromDob(dob, ref){
   return {days, text, category};
 }
 
+// ---- "Kobo sync" panel (state / district / block logins): when the Apps Script last pulled from Kobo and how many
+// Kobo reports are stored for this login. Read-only: action 'koboSummary'. Facility / SNCU / NBSU logins never see it.
+let _mpKobo = { t:0, p:null };
+function mpKoboSummary(force){
+  if(!force && _mpKobo.p && Date.now()-_mpKobo.t < 15000) return _mpKobo.p;      // MDR and CDR tabs share one request
+  _mpKobo.t = Date.now();
+  _mpKobo.p = recCall('koboSummary', {}).catch(e=>{ _mpKobo.p = null; throw e; });
+  return _mpKobo.p;
+}
+function mpKoboAgo(iso){
+  const t = Date.parse(iso); if(!t) return '';
+  const m = Math.max(0, Math.round((Date.now()-t)/60000));
+  if(m<1) return 'just now'; if(m<60) return m+' min ago';
+  const h = Math.floor(m/60); if(h<24) return h+(h===1?' hour':' hours')+' ago';
+  const d = Math.floor(h/24); return d+(d===1?' day':' days')+' ago';
+}
+function mpKoboIst(iso){
+  const t = Date.parse(iso); if(!t) return '—';
+  return new Date(t).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})+' IST';
+}
+function mpKoboPanelHtml(j, mod){
+  const n = x=>(+x||0).toLocaleString();
+  const st = (j.stored && j.stored[mod]) || {total:0,asha:0,ward:0,latest:'',byBlock:{}};
+  let tot=st.total, asha=st.asha, ward=st.ward, latest=st.latest, scope='';
+  if(BLOCK_LOCK){                                   // block login: the cloud login is the district's, so narrow to this block here
+    tot=asha=ward=0; latest='';
+    Object.keys(st.byBlock||{}).forEach(k=>{ if(blockSame(k, BLOCK_LOCK.name)){ const e=st.byBlock[k]; tot+=e.n; asha+=e.asha; ward+=e.ward; if(e.latest>latest) latest=e.latest; } });
+    scope = BLOCK_LOCK.name+' block';
+  } else if(DISTRICT_LOCK) scope = DISTRICT_LOCK.name+' district';
+  else scope = 'all districts';
+  const age = j.lastSync ? (Date.now()-Date.parse(j.lastSync))/60000 : Infinity;
+  const cls = !j.lastSync ? '' : (age<=45 ? 'ok' : 'stale');           // the pull runs every 15 min, so >45 min means it is behind
+  const state = !j.lastSync ? 'No pull has run yet' : (cls==='ok' ? 'Syncing normally' : 'Last pull was a while ago');
+  let h = '<div class="kobo-head"><span class="kobo-dot '+cls+'"></span><span>Kobo sync</span><span class="kobo-state">'+state+' · '+scope+'</span>'
+        + '<button type="button" data-kobo-refresh>↻ Refresh</button></div><div class="kobo-grid">'
+        + '<div><div class="v sm">'+(j.lastSync ? mpKoboAgo(j.lastSync) : '—')+'</div><div class="l">Last sync'+(j.lastSync?' · '+mpKoboIst(j.lastSync)+(j.lastSyncFull?' (full re-pull)':''):'')+'</div></div>'
+        + '<div><div class="v">'+n(tot)+'</div><div class="l">'+mod.toUpperCase()+' reports from Kobo</div></div>'
+        + '<div><div class="v">'+n(asha)+'</div><div class="l">Reported by ASHA</div></div>'
+        + '<div><div class="v">'+n(ward)+'</div><div class="l">Reported by Ward member</div></div>'
+        + '<div><div class="v sm">'+(latest ? mpKoboIst(latest) : '—')+'</div><div class="l">Latest '+mod.toUpperCase()+' report received</div></div>';
+  if(j.role==='admin' && j.lastRun){
+    h += '<div><div class="v">'+n(j.lastRun.fetched)+'</div><div class="l">Fetched in last pull</div></div>'
+       + '<div><div class="v">'+n(j.lastRun.saved)+'</div><div class="l">Saved in last pull</div></div>'
+       + '<div><div class="v">'+n(j.lastRun.skipped)+'</div><div class="l">Skipped (not a usable MDR/CDR report)</div></div>'
+       + '<div><div class="v">'+n(j.districtsReporting)+'</div><div class="l">Districts with Kobo reports</div></div>';
+  }
+  h += '</div>';
+  if(!j.lastSync) h += '<div class="kobo-note">Kobo has not been pulled yet. The cloud script needs KOBO_ASSET_UID and KOBO_TOKEN, then <b>koboSyncAll</b> and <b>installKoboTrigger</b> run once.</div>';
+  return h;
+}
+
 function makeModule(containerId, opts){
   const el = document.getElementById(containerId);
   el.innerHTML = `
@@ -2962,6 +3024,7 @@ function makeModule(containerId, opts){
         <button type="button" id="${containerId}-cloud-records" title="Show all records for this login and edit them">📋 Records</button>
         <span class="cloud-status" id="${containerId}-cloud-status"></span>
       </div>
+      <div id="${containerId}-kobo-panel" class="kobo-panel" style="display:none"></div>
       <div id="${containerId}-records-panel" style="display:none;margin:0 0 14px;"></div>
       <div class="upload-row">
         <label class="upload-box" id="${containerId}-drop">
@@ -3441,6 +3504,21 @@ function makeModule(containerId, opts){
   (window.__mpBlockSources = window.__mpBlockSources || []).push(()=>(lineListing && lineListing.records) || []);
   if(BLOCK_LOCK || FACILITY_LOCK){ if(cloudDeleteBtn) cloudDeleteBtn.style.display='none'; }
   const cloudStatusEl = document.getElementById(`${containerId}-cloud-status`);
+  const koboPanelEl = document.getElementById(`${containerId}-kobo-panel`);
+  async function koboPanelRefresh(force){
+    if(!koboPanelEl || FACILITY_LOCK || !CLOUD_AUTH) return;       // facility / SNCU / NBSU logins never see Kobo reports
+    koboPanelEl.style.display = '';
+    if(!koboPanelEl.innerHTML) koboPanelEl.innerHTML = '<div class="kobo-head"><span class="kobo-dot"></span><span>Kobo sync</span><span class="kobo-state">Checking…</span></div>';
+    try{
+      const j = await mpKoboSummary(!!force);
+      koboPanelEl.innerHTML = mpKoboPanelHtml(j, containerId);
+    }catch(e){
+      const msg = String((e && e.message) || e);
+      koboPanelEl.innerHTML = '<div class="kobo-head"><span class="kobo-dot"></span><span>Kobo sync</span><span class="kobo-state">Status unavailable</span><button type="button" data-kobo-refresh>↻ Retry</button></div>'
+        + '<div class="kobo-note err">'+msg.replace(/[<>&]/g,'')+(/unknown action/i.test(msg)?' — deploy the updated MPCDSR_Code.gs as a New version.':'')+'</div>';
+    }
+  }
+  if(koboPanelEl){ koboPanelEl.addEventListener('click', e=>{ if(e.target.closest('[data-kobo-refresh]')) koboPanelRefresh(true); }); koboPanelRefresh(false); }
   let cloudBusy = false;
   function setCloudStatus(msg, isErr){ if(cloudStatusEl){ cloudStatusEl.textContent = msg; cloudStatusEl.style.color = isErr ? '#c0392b' : (/^Checking cloud/i.test(msg) ? '#1e8e3e' : '#666'); } }
   // ---- merge-on-save helpers: the cloud keeps ONE snapshot per module+district, so a plain
@@ -3601,7 +3679,7 @@ function makeModule(containerId, opts){
       document.dispatchEvent(new CustomEvent('mp-rec-changed',{detail:containerId}));
     }catch(e){ /* the link is optional: never block the dashboard */ console.warn('SNCU link:', e && e.message); }
   }
-  async function cloudLoadModule(silent){ await cloudLoadModuleCore(silent); await cdrMergeLinked(); }
+  async function cloudLoadModule(silent){ await cloudLoadModuleCore(silent); await cdrMergeLinked(); koboPanelRefresh(true); }
   async function cloudLoadModuleCore(silent){
     if(!cloudReady() || cloudBusy) return;
     // SNCU / NBSU logins have no MDR module: don't download maternal records at all

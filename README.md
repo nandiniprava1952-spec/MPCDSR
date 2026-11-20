@@ -70,3 +70,9 @@ A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interfac
 - Kobo reports are shown to **state, district and block** logins only; facility, SNCU and NBSU logins never see them (the SNCU/NBSU-linked CDR deaths are unaffected). This is enforced in the dashboard page, not in the Apps Script.
 - **Reported by ASHA** and **Reported by Ward member** KPI cards (CDR and MDR Overview) count these records by the form's *Reporter designation*.
 - After changing `MPCDSR_Code.gs`: Deploy > Manage deployments > edit > **New version**.
+
+## Kobo sync panel (state / district / block logins)
+- A **Kobo sync** card under the cloud buttons on the MDR and CDR tabs shows: how long ago the Apps Script last pulled from Kobo (and the exact IST time), how many Kobo reports of that module are stored for the login, how many were reported by ASHA / Ward member, and when the latest report arrived. The dot is green while the last pull is under 45 minutes old (the trigger runs every 15 minutes), amber if older, grey if no pull has run.
+- Scope: state login = all districts; district login = its district; block login = its block only. The **state login** additionally sees fetched / saved / skipped of the last pull and the number of districts with Kobo reports.
+- Facility, SNCU and NBSU logins do not see the panel. It refreshes after each **Load latest** and with **Refresh**.
+- Needs the updated `MPCDSR_Code.gs` (new read-only action `koboSummary`): Deploy > Manage deployments > edit > **New version**. Until then the panel shows "Status unavailable ... Unknown action".
