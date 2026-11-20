@@ -793,6 +793,8 @@ const PERIOD_LABELS = {antenatal:'Antenatal', intranatal:'Intranatal', postnatal
 // spellings/encodings (Yes/Y/1/True) rather than requiring an exact "Yes" match.
 // Who reported the death — from the Kobo form's "Reporter designation" (ASHA / Ward member).
 // Accepts the choice name or label; falls back to the ward-member name field when a pull carries only that.
+// Reports that came from the Kobo form (pulled by the Apps Script) — shown to state / district / block logins only.
+function isKoboRec(r){ return !!r && (String(r.srcId||'').indexOf('kobo-')===0 || r.entrySource==='Kobo form'); }
 function reporterRole(r){
   const d = String((r && (r.reporterDesignation!=null ? r.reporterDesignation : (r.reporter_designation!=null ? r.reporter_designation : r.designation))) || '').toLowerCase();
   if(/ward/.test(d)) return 'ward';
@@ -2388,7 +2390,7 @@ function districtLockRecords(records){
   const want = normalizeDistrict(DISTRICT_LOCK.name);
   let out = records.filter(r=>normalizeDistrict(r.district)===want);
   if(FACILITY_LOCK){
-    out = out.filter(r=>mpFacMatch(r.facilityName));
+    out = out.filter(r=>mpFacMatch(r.facilityName) && !isKoboRec(r));   // Kobo reports are not shown to facility / SNCU / NBSU logins
     return out;   // a brand-new facility legitimately has no records yet
   }
   if(BLOCK_LOCK){
