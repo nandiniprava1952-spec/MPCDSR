@@ -4179,7 +4179,8 @@ function makeModule(containerId, opts){
   let selectedCause=null;    // which Cause-of-death card is currently drilled into
   let selectedAge=null;      // which Age-wise (Neonatal/Infant/Child) card is currently drilled into — CDR only
   let selectedPeriod=null;   // which Antenatal/Intranatal/Post natal/Post Abortion card is currently drilled into
-  let selectedTotal=false;   // whether the "Total death" KPI card is currently drilled into
+  let selectedReporter=null;   // 'asha' | 'ward' | null - Reported by ASHA / Ward member card drilled into
+let selectedTotal=false;   // whether the "Total death" KPI card is currently drilled into
   let selectedHrpType=null;  // which HRP-type card is currently drilled into — MDR only
   let selectedBlock=null;    // which Block-wise comparison card is currently drilled into
   let lbwPanelOpen=false;    // whether the "Birth weight <2500 g" card's age-band breakdown is open
@@ -4795,8 +4796,8 @@ function makeModule(containerId, opts){
       }
       // These two cards sit first in the grid, directly under the "Overview" heading (unshift, not push).
       if(!FACILITY_LOCK || (lineListing && lineListing.records.some(r=>reporterRole(r) || isKoboRec(r)))){   // state / district / block logins always see them (0 until reports arrive)
-        kpis.unshift({v: llScoped.filter(r=>reporterRole(r)==='asha').length.toLocaleString(), l:'Reported by ASHA'},
-                     {v: llScoped.filter(r=>reporterRole(r)==='ward').length.toLocaleString(), l:'Reported by Ward member'});
+        kpis.unshift({v: llScoped.filter(r=>reporterRole(r)==='asha').length.toLocaleString(), l:'Reported by ASHA', isReporterCard:true, reporter:'asha', clickable:true},
+                     {v: llScoped.filter(r=>reporterRole(r)==='ward').length.toLocaleString(), l:'Reported by Ward member', isReporterCard:true, reporter:'ward', clickable:true});
       }
       // Next few numeric columns as extra context cards — skip the primary metric
       // column since it's already shown above as "Total number (...)".
@@ -4834,9 +4835,9 @@ function makeModule(containerId, opts){
         kpis.push({v: (toNum(totalRow[defMetricIdx])||0).toLocaleString(), l:'As reported (sheet\'s own total row)'});
       }
       kpiEl.innerHTML = kpis.map(k=>{
-        const clickable = (k.isTotalCard || k.isHrpCard || k.isNonHrpCard || k.isLbwCard) && k.clickable;
-        const active = clickable && ((k.isTotalCard && selectedTotal) || (k.isHrpCard && hrpPanelOpen) || (k.isNonHrpCard && nonHrpFilterOn) || (k.isLbwCard && lbwPanelOpen));
-        const attr = k.isLbwCard ? 'data-lbw-card="1"' : k.isTotalCard ? 'data-total-card="1"' : (k.isHrpCard ? 'data-hrp-card="1"' : (k.isNonHrpCard ? 'data-nonhrp-card="1"' : ''));
+        const clickable = (k.isTotalCard || k.isHrpCard || k.isNonHrpCard || k.isLbwCard || k.isReporterCard) && k.clickable;
+        const active = clickable && ((k.isTotalCard && selectedTotal) || (k.isHrpCard && hrpPanelOpen) || (k.isNonHrpCard && nonHrpFilterOn) || (k.isLbwCard && lbwPanelOpen) || (k.isReporterCard && selectedReporter===k.reporter));
+        const attr = k.isReporterCard ? 'data-reporter-card="'+k.reporter+'"' : k.isLbwCard ? 'data-lbw-card="1"' : k.isTotalCard ? 'data-total-card="1"' : (k.isHrpCard ? 'data-hrp-card="1"' : (k.isNonHrpCard ? 'data-nonhrp-card="1"' : ''));
         return `<div class="kpi"${clickable?` ${attr} style="cursor:pointer;${active?'outline:2px solid var(--good);':''}"`:''}><div class="v">${k.v}</div><div class="l">${escapeHtml(k.l)}</div></div>`;
       }).join('');
       kpiEl.onclick = (e)=>{
@@ -4844,11 +4845,18 @@ function makeModule(containerId, opts){
         const hrpCard = e.target.closest('[data-hrp-card]');
         const nonHrpCard = e.target.closest('[data-nonhrp-card]');
         const lbwCard = e.target.closest('[data-lbw-card]');
-        if(lbwCard){
+        const repCard = e.target.closest('[data-reporter-card]');
+        if(repCard){
+          const w = repCard.getAttribute('data-reporter-card');
+          selectedReporter = (selectedReporter===w) ? null : w;
+          if(selectedReporter) selectedTotal = false;
+          updateKpis(distFilterEl.value);
+        } else if(lbwCard){
           lbwPanelOpen = !lbwPanelOpen;
           updateKpis(distFilterEl.value);
         } else if(totalCard){
           selectedTotal = !selectedTotal;
+          if(selectedTotal) selectedReporter = null;
           updateKpis(distFilterEl.value);
         } else if(hrpCard){
           hrpPanelOpen = !hrpPanelOpen;
@@ -4899,7 +4907,19 @@ function makeModule(containerId, opts){
       // Click-to-fetch: pull ALL matching raw records from the optional line-listing
       // upload for the "Total death" card — same district filter as the rest of the
       // dashboard, but no cause/place/period filtering (this is the full record set).
-      if(selectedTotal && !lineListing){
+      if(selectedReporter){
+        const who = selectedReporter==='asha' ? 'ASHA' : 'Ward member';
+        const rr = lineListing ? llScoped.filter(r=>reporterRole(r)===selectedReporter) : [];
+        totalRecordsTitle.style.display = '';
+        totalRecordsCard.style.display = '';
+        if(!lineListing){
+          totalRecordsTitle.textContent = 'Reported by '+who+' - records';
+          totalRecordsCard.innerHTML = '<div class="empty" style="padding:10px 0;">Load the cloud records (or upload the line-listing) to see these records.</div>';
+        } else {
+          totalRecordsTitle.innerHTML = 'Reported by '+who+' - records <span style="font-weight:400;font-size:0.8em;color:var(--muted,#8a94ac);">('+rr.length.toLocaleString()+' record'+(rr.length===1?'':'s')+' - click the card again to close)</span> <button onclick="toggleRecords(\''+containerId+'-total-records-card\', this)" style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--accent);cursor:pointer;">Hide records</button>';
+          totalRecordsCard.innerHTML = rr.length ? (containerId==='cdr' ? cdrRecordsTableHtml(rr, 200) : recordsTableHtml(rr, 200, containerId==='mdr')) : '<div class="empty" style="padding:10px 0;">No records.</div>';
+        }
+      } else if(selectedTotal && !lineListing){
         totalRecordsTitle.style.display = '';
         totalRecordsTitle.textContent = 'Total deaths — raw records';
         totalRecordsCard.style.display = '';
@@ -6449,6 +6469,9 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<'
 /* ---------------- init ---------------- */
 makeModule('mdr', {label:'MDR line listing', defaultSheetHint:/mar|district wise/i, trend:true, addTotalSheet:true, lineListingDrilldown:false, primaryIsLineListing:true});
 makeModule('cdr', {label:'CDR abstract', defaultSheetHint:/mar|2025-26/i, trend:true, addTotalSheet:true, primaryIsLineListing:true});
+// Restored (saved) login: startApp() already fired 'mp-auth-ready' before the modules above registered their listeners,
+// so cloud records never auto-loaded. Fire it once more now that every listener exists (fresh logins are unaffected: CLOUD_AUTH is null here).
+setTimeout(function(){ try{ if(typeof CLOUD_AUTH!=='undefined' && CLOUD_AUTH && CLOUD_AUTH.pass) document.dispatchEvent(new CustomEvent('mp-auth-ready')); }catch(e){ console.warn('auto-load', e); } }, 0);
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{

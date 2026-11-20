@@ -2,7 +2,7 @@
    Cloud (Apps Script) calls are never cached.
    RELEASING: change VERSION below on every release (e.g. mpcdsr-v32). Browsers detect a new version
    by a change in this file, which is what makes the in-app "Update available" card appear. */
-const VERSION = 'mpcdsr-v46';
+const VERSION = 'mpcdsr-v47';
 const INDEX = './index.html';
 const OTHERS = ['./manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 const EST_INDEX = 2950000;   // fallback size (bytes) of index.html for progress when the server sends no length
