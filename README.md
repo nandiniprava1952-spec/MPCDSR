@@ -64,3 +64,8 @@ A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interfac
 - **Update** shows a spinning ring ("Installing update..."), the app restarts by itself, and "✔ Updated to the latest version" appears.
 - Nothing is swapped in until the person taps Update, so nobody loses work in the middle of data entry.
 - A new version is only offered when `VERSION` in `sw.js` has changed (see Updating above).
+
+## Kobo sub-centre reports (MDR + CDR)
+- Submissions of the Kobo form (`mpcdsr_subcentre_report`) are pulled by the Apps Script (`MPCDSR_Code.gs`, see its header for the three Script properties and the one-time `koboSyncAll` / `installKoboTrigger` steps), stored per module and district, and merged into the MDR and CDR records after login/Load latest, together with the SNCU/NBSU-linked CDR deaths. Records already loaded are never duplicated (matched on the Kobo submission id).
+- **Reported by ASHA** and **Reported by Ward member** KPI cards (CDR and MDR Overview) count these records by the form's *Reporter designation*.
+- After changing `MPCDSR_Code.gs`: Deploy > Manage deployments > edit > **New version**.
