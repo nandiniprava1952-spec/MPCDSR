@@ -185,7 +185,6 @@ header h1{padding-right:0;}
 header.has-lock h1{margin-top:34px;}
 .cloud-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;}
 .cloud-row button{padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:13px;font-weight:600;min-height:40px;}
-.cloud-row button:first-child{background:var(--accent);border-color:var(--accent);color:#fff;}
 .cloud-row button:active{opacity:.8;}
 .cloud-row .cloud-status{font-size:12px;color:var(--muted);flex:1 1 100%;overflow-wrap:anywhere;}
 .cloud-row .cloud-status:empty{display:none;}
@@ -199,6 +198,8 @@ header.has-lock h1{margin-top:34px;}
 .kobo-grid>div{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
 .kobo-grid .v{font-size:17px;font-weight:700;line-height:1.2;} .kobo-grid .v.sm{font-size:13px;}
 .kobo-grid .l{font-size:11px;color:var(--muted);margin-top:2px;}
+.cloud-row .kobo-panel{margin:0;padding:6px 10px;flex:1 1 260px;min-width:0;}
+.cloud-row .kobo-panel button{width:auto;min-height:32px;padding:5px 10px;font-size:12px;}
 .kobo-note{font-size:11px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere;} .kobo-note.err{color:#f87171;}
 </style>
 <style id="mp-login-css">
@@ -251,6 +252,8 @@ header.has-lock h1{margin-top:34px;}
     .cloud-row button{width:100%;min-height:46px;font-size:13px;padding:8px 6px;}
     .cloud-row #cdr-cloud-delete,.cloud-row #mdr-cloud-delete,.cloud-row #cdr-cloud-records,.cloud-row #mdr-cloud-records{grid-column:1 / -1;}
         .cloud-row .cloud-status{grid-column:1 / -1;}
+    .cloud-row .kobo-panel{grid-column:1 / -1;}
+    .cloud-row .kobo-panel button{width:auto;min-height:32px;font-size:12px;padding:5px 10px;}
     .tabs{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0;margin-bottom:12px;}
     .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
     .card-fs-btn{width:36px;height:36px;}
@@ -2982,7 +2985,7 @@ function mpKoboIst(iso){
   const t = Date.parse(iso); if(!t) return '—';
   return new Date(t).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})+' IST';
 }
-function mpKoboPanelHtml(j){
+function mpKoboPanelHtml(j, mod){            // mod = 'cdr' | 'mdr': the tab's own module; the other module's figures are never shown
   const n = x=>(+x||0).toLocaleString();
   const sum = mod=>{                                // this login's totals for one module (a block login is narrowed to its block here)
     const st = (j.stored && j.stored[mod]) || {total:0,asha:0,ward:0,byBlock:{}};
@@ -2991,16 +2994,13 @@ function mpKoboPanelHtml(j){
     Object.keys(st.byBlock||{}).forEach(k=>{ if(blockSame(k, BLOCK_LOCK.name)){ const e=st.byBlock[k]; r.t+=e.n; r.a+=e.asha; r.w+=e.ward; } });
     return r;
   };
-  const c = sum('cdr'), m = sum('mdr');
+  const x = sum(mod), MOD = String(mod).toUpperCase();
   const age = j.lastSync ? (Date.now()-Date.parse(j.lastSync))/60000 : Infinity;
   const cls = !j.lastSync ? '' : (age<=45 ? 'ok' : 'stale');           // the pull runs every 15 min, so >45 min means it is behind
   let h = '<div class="kobo-head"><span class="kobo-dot '+cls+'"></span><span>Kobo sync</span><span class="kobo-state"></span>'
         + '<button type="button" data-kobo-refresh>↻ Refresh</button></div><div class="kobo-grid">'
         + '<div><div class="v sm">'+(j.lastSync ? mpKoboAgo(j.lastSync) : 'Not yet')+'</div><div class="l">Last sync'+(j.lastSync?' · '+mpKoboIst(j.lastSync):'')+'</div></div>'
-        + '<div><div class="v">'+n(c.t)+'</div><div class="l">CDR reports from Kobo</div></div>'
-        + '<div><div class="v">'+n(m.t)+'</div><div class="l">MDR reports from Kobo</div></div>'
-        + '<div><div class="v">'+n(c.a+m.a)+'</div><div class="l">Reported by ASHA</div></div>'
-        + '<div><div class="v">'+n(c.w+m.w)+'</div><div class="l">Reported by Ward member</div></div>'
+        + '<div><div class="v">'+n(x.t)+'</div><div class="l">'+MOD+' reports from Kobo</div></div>'
         + '</div>';
   return h;
 }
@@ -3014,9 +3014,9 @@ function makeModule(containerId, opts){
         <button type="button" id="${containerId}-cloud-load">☁ Load latest</button>
         <button type="button" id="${containerId}-cloud-delete" style="color:#f87171;border-color:#7f3a3a;">🗑 Delete cloud records</button>
         <button type="button" id="${containerId}-cloud-records" title="Show all records for this login and edit them">📋 Records</button>
+        <div id="${containerId}-kobo-panel" class="kobo-panel" style="display:none"></div>
         <span class="cloud-status" id="${containerId}-cloud-status"></span>
       </div>
-      <div id="${containerId}-kobo-panel" class="kobo-panel" style="display:none"></div>
       <div id="${containerId}-records-panel" style="display:none;margin:0 0 14px;"></div>
       <div class="upload-row">
         <label class="upload-box" id="${containerId}-drop">
@@ -3503,7 +3503,7 @@ function makeModule(containerId, opts){
     if(!koboPanelEl.innerHTML) koboPanelEl.innerHTML = '<div class="kobo-head"><span class="kobo-dot"></span><span>Kobo sync</span><span class="kobo-state">Checking…</span></div>';
     try{
       const j = await mpKoboSummary(!!force);
-      koboPanelEl.innerHTML = mpKoboPanelHtml(j);
+      koboPanelEl.innerHTML = mpKoboPanelHtml(j, containerId);
     }catch(e){
       const msg = String((e && e.message) || e);
       koboPanelEl.innerHTML = '<div class="kobo-head"><span class="kobo-dot"></span><span>Kobo sync</span><span class="kobo-state">Status unavailable</span><button type="button" data-kobo-refresh>↻ Retry</button></div>'
@@ -4793,9 +4793,10 @@ function makeModule(containerId, opts){
       if(lineListing && lineListing.records.some(isKoboRec)){
         kpis.push({v: llScoped.filter(isKoboRec).length.toLocaleString(), l: containerId.toUpperCase()+' reports from Kobo'});
       }
-      if(lineListing && lineListing.records.some(r=>reporterRole(r))){
-        kpis.push({v: llScoped.filter(r=>reporterRole(r)==='asha').length.toLocaleString(), l:'Reported by ASHA'});
-        kpis.push({v: llScoped.filter(r=>reporterRole(r)==='ward').length.toLocaleString(), l:'Reported by Ward member'});
+      // These two cards sit first in the grid, directly under the "Overview" heading (unshift, not push).
+      if(!FACILITY_LOCK || (lineListing && lineListing.records.some(r=>reporterRole(r) || isKoboRec(r)))){   // state / district / block logins always see them (0 until reports arrive)
+        kpis.unshift({v: llScoped.filter(r=>reporterRole(r)==='asha').length.toLocaleString(), l:'Reported by ASHA'},
+                     {v: llScoped.filter(r=>reporterRole(r)==='ward').length.toLocaleString(), l:'Reported by Ward member'});
       }
       // Next few numeric columns as extra context cards — skip the primary metric
       // column since it's already shown above as "Total number (...)".

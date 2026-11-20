@@ -72,7 +72,7 @@ A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interfac
 - After changing `MPCDSR_Code.gs`: Deploy > Manage deployments > edit > **New version**.
 
 ## Kobo sync panel (state / district / block logins)
-- A **Kobo sync** card under the cloud buttons (MDR and CDR tabs) shows five figures: **Last sync** (how long ago, and the IST time), **CDR reports from Kobo**, **MDR reports from Kobo**, **Reported by ASHA** and **Reported by Ward member** (ASHA / Ward member count MDR + CDR together). The dot is green while the last pull is under 45 minutes old (the trigger runs every 15 minutes), amber if older, grey if no pull has run.
+- A **Kobo sync** card in the cloud-button row, right beside **📋 Records** (MDR and CDR tabs; full width on phones) shows two figures for the tab you are on: **Last sync** (how long ago, and the IST time) and **CDR reports from Kobo** (CDR tab) or **MDR reports from Kobo** (MDR tab); the other module's figure is never shown. **Reported by ASHA** and **Reported by Ward member** are not in this panel: they are the first two cards of the Overview, directly under the heading. The dot is green while the last pull is under 45 minutes old (the trigger runs every 15 minutes), amber if older, grey if no pull has run.
 - Scope: state login = all districts; district login = its district; block login = its block only. Facility, SNCU and NBSU logins do not see it.
 - It refreshes after each **Load latest** and with **Refresh**.
 - Needs the updated `MPCDSR_Code.gs` (read-only action `koboSummary`): Deploy > Manage deployments > edit > **New version**. Until then the panel shows "Status unavailable ... Unknown action".
