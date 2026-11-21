@@ -358,12 +358,15 @@ header.has-lock h1{margin-top:34px;}
   <div class="tabs">
     <button class="tab-btn active" data-tab="mdr">MDR (Maternal Deaths)</button>
     <button class="tab-btn" data-tab="cdr">CDR (Child Deaths)</button>
+    <button class="tab-btn" data-tab="summary">Summary</button>
   </div>
 
   <!-- MDR MODULE -->
   <div id="mdr" class="module active"></div>
   <!-- CDR MODULE -->
   <div id="cdr" class="module"></div>
+  <!-- ENQUIRY SUMMARY (compiled from MDR + CDR records) -->
+  <div id="summary" class="module"></div>
 </div>
 
 <script>
@@ -3792,6 +3795,7 @@ function makeModule(containerId, opts){
     const inCss = 'width:100%;padding:8px 10px;border:1px solid #8a94ac;border-radius:6px;font-size:14px;box-sizing:border-box;background:#fff;color:#111827;color-scheme:light;';
     const PAGE = 200; let LIMIT = PAGE;   // rows shown in the Records tab; grows with Show next 200 / Show all
     function recs(){ return (lineListing && lineListing.records) || []; }
+    (window.MPREC = window.MPREC || {})[containerId] = recs;   // read by the Summary tab
     function hayOf(r){ return Object.keys(r).filter(k=>k!=='__hay').map(k=>String(r[k]==null?'':r[k])).join(' ').toLowerCase(); }
     function render(){
       if(!open){ panel.style.display='none'; return; }
@@ -4003,7 +4007,6 @@ function makeModule(containerId, opts){
         <div id="${fid('pane-enq')}" style="display:none;flex-wrap:wrap;gap:10px;">${ENQ.map(field).join('')}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;">
           <button type="button" id="${fid('save')}" class="dl-tab" style="background:#1d6fb8;color:#fff;border-color:#1d6fb8;">✔ Save changes</button>
-          <button type="button" id="${fid('cancel')}" class="dl-tab" style="color:#111827;">Cancel</button>
           <span id="${fid('msg')}" style="font-size:12.5px;color:#c0392b;"></span>
         </div></div>`;
       document.body.appendChild(ov);
@@ -4019,7 +4022,6 @@ function makeModule(containerId, opts){
       document.getElementById(fid('tab-rec')).onclick = ()=>showTab('rec');
       document.getElementById(fid('tab-enq')).onclick = ()=>showTab('enq');
       showTab(startTab==='enq' ? 'enq' : 'rec');
-      document.getElementById(fid('cancel')).onclick = close;
       document.getElementById(fid('tab-cancel')).onclick = close;
       ov.addEventListener('mousedown', e=>{ if(e.target===ov) close(); });
       if(isMdrM){
@@ -6542,6 +6544,85 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById(btn.dataset.tab).classList.add('active');
   });
 });
+
+
+/* ---------------- Summary tab: enquiry reports compiled for MDR and CDR separately ---------------- */
+(function(){
+  const host = document.getElementById('summary'), tabBtn = document.querySelector('.tab-btn[data-tab="summary"]');
+  if(!host || !tabBtn) return;
+  const ST = ['Not started','Pending','In progress','Completed'];
+  const COL = {'Not started':'#6b7280','Pending':'#b45309','In progress':'#1d6fb8','Completed':'#15803d'};
+  const ENQK = ['enqStatus','enqDate','enqBy','enqDesig','enqMode','enqFindings','enqFactors','enqAction','enqRemarks'];
+  const hasEnq = r=>ENQK.some(k=>String(r[k]==null?'':r[k]).trim()!=='');
+  const stOf = r=>{ const v = String(r.enqStatus||'').trim(); return ST.indexOf(v)>0 ? v : (hasEnq(r) ? 'Pending' : 'Not started'); };
+  const hay = r=>Object.keys(r).filter(k=>k.indexOf('__')!==0).map(k=>String(r[k]==null?'':r[k])).join(' ').toLowerCase();
+  const state = { mdr:{st:'',q:''}, cdr:{st:'',q:''} };
+  const recsOf = m=>{ const f = window.MPREC && window.MPREC[m]; return f ? f() : []; };
+  const E = escapeHtml;
+  const badge = st=>`<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;color:#fff;background:${COL[st]};">${E(st)}</span>`;
+  const subject = (m,r)=> m==='mdr' ? (r.nameCombined||r.deceasedName||'') : [r.gender, r.age].filter(Boolean).join(', ');
+
+  function section(m){
+    const title = m==='mdr' ? 'MDR (Maternal Deaths)' : 'CDR (Child Deaths)';
+    const all = recsOf(m), f = state[m];
+    const cnt = {}; ST.forEach(x=>cnt[x]=0); all.forEach(r=>{ cnt[stOf(r)]++; });
+    const withEnq = all.filter(hasEnq);
+    const dm = new Map();
+    all.forEach(r=>{ const d = r.district||'(blank)'; let o = dm.get(d); if(!o){ o = {total:0}; ST.forEach(x=>o[x]=0); dm.set(d,o); } o.total++; o[stOf(r)]++; });
+    const dRows = Array.from(dm.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+    const words = f.q.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows = withEnq.filter(r=>(!f.st || stOf(r)===f.st) && (!words.length || words.every(w=>hay(r).indexOf(w)>=0)));
+    const kpi = (v,l,c)=>`<div style="flex:1 1 130px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--panel);"><div style="font-size:22px;font-weight:700;color:${c||'inherit'};">${v.toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${E(l)}</div></div>`;
+    const th = t=>`<th style="text-align:left;padding:6px 8px;">${E(t)}</th>`;
+    const td = (t,wrap)=>`<td style="padding:5px 8px;${wrap?'white-space:normal;min-width:200px;max-width:320px;':''}">${E(t==null?'':t)}</td>`;
+    const head = ['#','District','Block', m==='mdr'?'Deceased mother':'Child (sex, age)','Date of death','Facility / place','Status','Date of enquiry','Enquired by','Mode','Findings','Contributing / avoidable factors','Action / recommendation','Remarks'];
+    const body = rows.map((r,i)=>'<tr>'+td(i+1)+td(r.district)+td(r.block)+td(subject(m,r))+td(r.date)+td(r.facilityName||r.place)
+      +`<td style="padding:5px 8px;">${badge(stOf(r))}</td>`+td(r.enqDate)+td([r.enqBy,r.enqDesig?'('+r.enqDesig+')':''].filter(Boolean).join(' '))+td(r.enqMode)
+      +td(r.enqFindings,1)+td(r.enqFactors,1)+td(r.enqAction,1)+td(r.enqRemarks,1)+'</tr>').join('');
+    const dBody = dRows.map(([d,o])=>`<tr><td style="padding:5px 8px;">${E(d)}</td><td style="padding:5px 8px;">${o.total}</td>${ST.map(x=>`<td style="padding:5px 8px;">${o[x]}</td>`).join('')}</tr>`).join('');
+    const sel = `<select data-m="${m}" data-f="st" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;"><option value="">All statuses</option>${ST.slice(1).map(x=>`<option value="${x}"${f.st===x?' selected':''}>${x}</option>`).join('')}</select>`;
+    return `<section style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;background:var(--panel2);">
+      <h2 style="margin:0 0 10px;font-size:17px;">${title} - enquiry summary</h2>
+      ${all.length ? `
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        ${kpi(all.length,'Total records')}${kpi(withEnq.length,'With enquiry details')}${ST.map(x=>kpi(cnt[x],x,COL[x])).join('')}
+      </div>
+      <div style="font-weight:600;margin:6px 0;">District-wise status</div>
+      <div class="table-wrap" style="max-height:260px;overflow:auto;"><table><thead><tr>${th('District')}${th('Total')}${ST.map(th).join('')}</tr></thead><tbody>${dBody}</tbody></table></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 6px;">
+        <b>Enquiry reports</b> ${sel}
+        <input type="search" data-m="${m}" data-f="q" value="${E(f.q)}" placeholder="Filter reports..." autocomplete="off" style="flex:1 1 200px;min-width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <button type="button" class="dl-tab" data-exp="${m}"${rows.length?'':' disabled'}>Export Excel</button>
+        <span style="font-size:12px;color:var(--muted);">${rows.length.toLocaleString()} report${rows.length===1?'':'s'}</span>
+      </div>
+      ${rows.length ? `<div class="table-wrap" style="max-height:520px;overflow:auto;"><table style="white-space:nowrap;"><thead style="position:sticky;top:0;background:var(--panel2);"><tr>${head.map(th).join('')}</tr></thead><tbody>${body}</tbody></table></div>`
+                    : '<div class="empty" style="padding:10px 0;">No enquiry reports yet. Open a record and fill the Enquiry tab.</div>'}`
+      : '<div class="empty" style="padding:10px 0;">No records loaded yet - log in / load cloud records or upload a line-listing in this module.</div>'}
+    </section>`;
+  }
+  function render(focus){
+    host.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;"><h2 style="margin:0;font-size:18px;">Enquiry summary</h2><button type="button" class="dl-tab" data-ref="1">Refresh</button></div>${section('mdr')}${section('cdr')}`;
+    if(focus){ const n = host.querySelector(`input[data-m="${focus}"][data-f="q"]`); if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }
+  }
+  function exportXlsx(m){
+    if(typeof XLSX==='undefined') return;
+    const f = state[m], words = f.q.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows = recsOf(m).filter(hasEnq).filter(r=>(!f.st || stOf(r)===f.st) && (!words.length || words.every(w=>hay(r).indexOf(w)>=0)));
+    const data = rows.map(r=>({ District:r.district||'', Block:r.block||'', [m==='mdr'?'Deceased mother':'Child (sex, age)']:subject(m,r), 'Date of death':r.date||'', 'Facility / place':r.facilityName||r.place||'',
+      Status:stOf(r), 'Date of enquiry':r.enqDate||'', 'Enquired by':r.enqBy||'', Designation:r.enqDesig||'', Mode:r.enqMode||'', Findings:r.enqFindings||'', 'Contributing / avoidable factors':r.enqFactors||'', 'Action / recommendation':r.enqAction||'', Remarks:r.enqRemarks||'' }));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), (m.toUpperCase()+' enquiry').slice(0,31));
+    XLSX.writeFile(wb, m.toUpperCase()+'_enquiry_summary.xlsx');
+  }
+  host.addEventListener('input', e=>{ const t = e.target; if(t.dataset && t.dataset.f==='q'){ state[t.dataset.m].q = t.value; render(t.dataset.m); } });
+  host.addEventListener('change', e=>{ const t = e.target; if(t.dataset && t.dataset.f==='st'){ state[t.dataset.m].st = t.value; render(); } });
+  host.addEventListener('click', e=>{
+    if(e.target.closest('[data-ref]')){ render(); return; }
+    const x = e.target.closest('[data-exp]'); if(x) exportXlsx(x.getAttribute('data-exp'));
+  });
+  tabBtn.addEventListener('click', ()=>render());
+  document.addEventListener('mp-rec-changed', ()=>{ if(host.classList.contains('active')) render(); });
+  render();
+})();
 
 /* ---------------- fullscreen option for every card, both modules ---------------- */
 (function(){
