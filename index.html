@@ -6556,7 +6556,8 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   const hasEnq = r=>ENQK.some(k=>String(r[k]==null?'':r[k]).trim()!=='');
   const stOf = r=>{ const v = String(r.enqStatus||'').trim(); return ST.indexOf(v)>0 ? v : (hasEnq(r) ? 'Pending' : 'Not started'); };
   const hay = r=>Object.keys(r).filter(k=>k.indexOf('__')!==0).map(k=>String(r[k]==null?'':r[k])).join(' ').toLowerCase();
-  const state = { mdr:{st:'',q:''}, cdr:{st:'',q:''} };
+  const state = { mdr:{st:'',q:''}, cdr:{st:'',q:''}, active:'mdr' };
+  const lastRows = { mdr:[], cdr:[] };
   const recsOf = m=>{ const f = window.MPREC && window.MPREC[m]; return f ? f() : []; };
   const E = escapeHtml;
   const badge = st=>`<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;color:#fff;background:${COL[st]};">${E(st)}</span>`;
@@ -6572,11 +6573,12 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     const dRows = Array.from(dm.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
     const words = f.q.toLowerCase().split(/\s+/).filter(Boolean);
     const rows = withEnq.filter(r=>(!f.st || stOf(r)===f.st) && (!words.length || words.every(w=>hay(r).indexOf(w)>=0)));
+    lastRows[m] = rows;
     const kpi = (v,l,c)=>`<div style="flex:1 1 130px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--panel);"><div style="font-size:22px;font-weight:700;color:${c||'inherit'};">${v.toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${E(l)}</div></div>`;
     const th = t=>`<th style="text-align:left;padding:6px 8px;">${E(t)}</th>`;
     const td = (t,wrap)=>`<td style="padding:5px 8px;${wrap?'white-space:normal;min-width:200px;max-width:320px;':''}">${E(t==null?'':t)}</td>`;
-    const head = ['#','District','Block', m==='mdr'?'Deceased mother':'Child (sex, age)','Date of death','Facility / place','Status','Date of enquiry','Enquired by','Mode','Findings','Contributing / avoidable factors','Action / recommendation','Remarks'];
-    const body = rows.map((r,i)=>'<tr>'+td(i+1)+td(r.district)+td(r.block)+td(subject(m,r))+td(r.date)+td(r.facilityName||r.place)
+    const head = ['#','Report','District','Block', m==='mdr'?'Deceased mother':'Child (sex, age)','Date of death','Facility / place','Status','Date of enquiry','Enquired by','Mode','Findings','Contributing / avoidable factors','Action / recommendation','Remarks'];
+    const body = rows.map((r,i)=>'<tr>'+td(i+1)+`<td style="padding:5px 8px;"><button type="button" class="dl-tab" data-view="${m}:${i}" style="padding:3px 10px;min-height:0;background:#c0392b;color:#fff;border-color:#c0392b;">View</button></td>`+td(r.district)+td(r.block)+td(subject(m,r))+td(r.date)+td(r.facilityName||r.place)
       +`<td style="padding:5px 8px;">${badge(stOf(r))}</td>`+td(r.enqDate)+td([r.enqBy,r.enqDesig?'('+r.enqDesig+')':''].filter(Boolean).join(' '))+td(r.enqMode)
       +td(r.enqFindings,1)+td(r.enqFactors,1)+td(r.enqAction,1)+td(r.enqRemarks,1)+'</tr>').join('');
     const dBody = dRows.map(([d,o])=>`<tr><td style="padding:5px 8px;">${E(d)}</td><td style="padding:5px 8px;">${o.total}</td>${ST.map(x=>`<td style="padding:5px 8px;">${o[x]}</td>`).join('')}</tr>`).join('');
@@ -6600,8 +6602,37 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
       : '<div class="empty" style="padding:10px 0;">No records loaded yet - log in / load cloud records or upload a line-listing in this module.</div>'}
     </section>`;
   }
+  function subTabs(){
+    const b = (m,t)=>{ const on = state.active===m; return `<button type="button" data-sub="${m}" class="dl-tab" style="padding:8px 16px;font-weight:600;border-color:#1d6fb8;background:${on?'#1d6fb8':'transparent'};color:${on?'#fff':'#1d6fb8'};">${t} (${recsOf(m).filter(hasEnq).length})</button>`; };
+    return `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">${b('mdr','MDR (Maternal Deaths)')}${b('cdr','CDR (Child Deaths)')}</div>`;
+  }
+  function reportHtml(m, r){
+    const lab = (l,v)=> (v==null||String(v).trim()==='') ? '' : `<tr><td class="l">${E(l)}</td><td>${E(v)}</td></tr>`;
+    const rec = m==='mdr'
+      ? [['District',r.district],['Block',r.block],['Deceased mother',r.nameCombined||r.deceasedName],['Husband / Guardian',r.husbandGuardian],['Age',r.age],['Date of death',r.date],['Place of death',r.place],['Facility',r.facilityName],['Period',r.period],['Reporting month / year',[r.month,r.year].filter(Boolean).join(' ')]]
+      : [['District',r.district],['Block',r.block],['Sex',r.gender],['Date of birth',r.dob],['Date of death',r.date],['Age',r.age],['Age category',r.ageCategory],['Place of death',r.place],['Facility',r.facilityName],['Probable cause (major)',r.causeMajor],['Other cause / details',r.causeOther],['Reporting month / year',[r.month,r.year].filter(Boolean).join(' ')]];
+    const enq = [['Enquiry status',stOf(r)],['Date of enquiry',r.enqDate],['Enquired by',r.enqBy],['Designation',r.enqDesig],['Mode of enquiry',r.enqMode],['Findings of enquiry',r.enqFindings],['Contributing / avoidable factors',r.enqFactors],['Action taken / recommendation',r.enqAction],['Remarks',r.enqRemarks]];
+    return `<h3>${m==='mdr'?'MDR':'CDR'} enquiry report</h3><div class="s">Death record</div><table>${rec.map(x=>lab(x[0],x[1])).join('')}</table><div class="s">Enquiry</div><table>${enq.map(x=>lab(x[0],x[1])).join('')}</table>`;
+  }
+  const REPORT_CSS = 'table{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:12px}td{padding:6px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top;white-space:pre-wrap}td.l{width:38%;color:#5b6475;font-weight:600}h3{margin:0 0 10px;font-size:17px}.s{font-weight:700;margin:10px 0 4px;color:#c0392b}';
+  function viewReport(m, i){
+    const r = lastRows[m][i]; if(!r) return;
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px;';
+    ov.innerHTML = `<div style="background:#fff;color:#111827;border-radius:12px;max-width:720px;width:100%;padding:16px;box-sizing:border-box;"><style>.rv ${REPORT_CSS.split('}').filter(Boolean).map(x=>'.rv '+x+'}').join(' ').replace(/^\.rv \.rv /,'.rv ')}</style><div class="rv">${reportHtml(m, r)}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;"><button type="button" class="dl-tab rv-print" style="background:#1d6fb8;color:#fff;border-color:#1d6fb8;">Print</button><button type="button" class="dl-tab rv-close" style="margin-left:auto;color:#111827;background:#e5e7eb;border-color:#9ca3af;">✖ Close</button></div></div>`;
+    document.body.appendChild(ov);
+    const close = ()=>ov.remove();
+    ov.querySelector('.rv-close').onclick = close;
+    ov.addEventListener('mousedown', e=>{ if(e.target===ov) close(); });
+    ov.querySelector('.rv-print').onclick = ()=>{
+      const fr = document.createElement('iframe'); fr.style.cssText = 'position:fixed;width:0;height:0;border:0;'; document.body.appendChild(fr);
+      fr.contentDocument.open(); fr.contentDocument.write('<html><head><title>Enquiry report</title><style>body{font-family:Arial,sans-serif;padding:16px}'+REPORT_CSS+'</style></head><body>'+reportHtml(m, r)+'</body></html>'); fr.contentDocument.close();
+      fr.contentWindow.focus(); fr.contentWindow.print(); setTimeout(()=>fr.remove(), 2000);
+    };
+  }
   function render(focus){
-    host.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;"><h2 style="margin:0;font-size:18px;">Enquiry summary</h2><button type="button" class="dl-tab" data-ref="1">Refresh</button></div>${section('mdr')}${section('cdr')}`;
+    host.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;"><h2 style="margin:0;font-size:18px;">Enquiry summary</h2><button type="button" class="dl-tab" data-ref="1">Refresh</button></div>${subTabs()}${section(state.active)}`;
     if(focus){ const n = host.querySelector(`input[data-m="${focus}"][data-f="q"]`); if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }
   }
   function exportXlsx(m){
@@ -6617,6 +6648,8 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   host.addEventListener('change', e=>{ const t = e.target; if(t.dataset && t.dataset.f==='st'){ state[t.dataset.m].st = t.value; render(); } });
   host.addEventListener('click', e=>{
     if(e.target.closest('[data-ref]')){ render(); return; }
+    const sb = e.target.closest('[data-sub]'); if(sb){ state.active = sb.getAttribute('data-sub'); render(); return; }
+    const vb = e.target.closest('[data-view]'); if(vb){ const [mm,ii] = vb.getAttribute('data-view').split(':'); viewReport(mm, +ii); return; }
     const x = e.target.closest('[data-exp]'); if(x) exportXlsx(x.getAttribute('data-exp'));
   });
   tabBtn.addEventListener('click', ()=>render());
