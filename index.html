@@ -3809,7 +3809,7 @@ function makeModule(containerId, opts){
       const rows = shown.map(i=>{
         const r = all[i];
         const my = [r.month,r.year].filter(Boolean).join(' ');
-        const eb = `<td style="white-space:nowrap;"><button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;background:#1d6fb8;color:#fff;border-color:#1d6fb8;">View / Edit</button> <button type="button" class="dl-tab mp-rec-enq" data-i="${i}" style="padding:4px 10px;min-height:0;background:#c0392b;color:#fff;border-color:#c0392b;">Enquiry</button>${canDelete()?` <button type="button" class="dl-tab mp-rec-del" data-i="${i}" style="padding:4px 10px;min-height:0;color:#c0392b;border-color:#c0392b;">🗑 Delete</button>`:''}</td>`;
+        const eb = `<td style="white-space:nowrap;"><button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;">📂 Open</button>${canDelete()?` <button type="button" class="dl-tab mp-rec-del" data-i="${i}" style="padding:4px 10px;min-height:0;color:#c0392b;border-color:#c0392b;">🗑 Delete</button>`:''}</td>`;
         return '<tr>'+(canDelete()?'<td><input type="checkbox" class="mp-rec-sel" data-i="'+i+'"'+(selected.has(r)?' checked':'')+'></td>':'')+(isMdrM
           ? td(r.district)+td(r.block)+td(r.nameCombined||r.deceasedName)+td(r.husbandGuardian)+td(r.age)+td(r.date)+td(PLACE_LABELS[r.place]||r.place)+td(r.facilityName)+td(PERIOD_LABELS[r.period]||r.period)+td(my)+td(r.enqStatus||'')
           : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(r.facilityName)+td(my)+td(r.enqStatus||''))+eb+'</tr>';
@@ -3836,7 +3836,6 @@ function makeModule(containerId, opts){
       { const mb = document.getElementById(`${containerId}-rp-more`); if(mb) mb.onclick = ()=>{ LIMIT += PAGE; render(); };
         const ab = document.getElementById(`${containerId}-rp-allrows`); if(ab) ab.onclick = ()=>{ LIMIT = 1e9; render(); }; }
       panel.querySelectorAll('.mp-rec-edit').forEach(b=>{ b.onclick = ()=>editRecord(+b.dataset.i); });
-      panel.querySelectorAll('.mp-rec-enq').forEach(b=>{ b.onclick = ()=>editRecord(+b.dataset.i, 'enq'); });
       panel.querySelectorAll('.mp-rec-view').forEach(b=>{ b.onclick = ()=>viewRecord(+b.dataset.i); });
       panel.querySelectorAll('.mp-rec-del').forEach(b=>{ b.onclick = ()=>deleteRecord(+b.dataset.i); });
       if(canDelete()){
@@ -3998,6 +3997,7 @@ function makeModule(containerId, opts){
         <div style="display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid #d5dae3;padding-bottom:8px;">
           <button type="button" id="${fid('tab-rec')}" class="dl-tab">View / Edit</button>
           <button type="button" id="${fid('tab-enq')}" class="dl-tab">Enquiry</button>
+          <button type="button" id="${fid('tab-cancel')}" class="dl-tab" style="margin-left:auto;color:#111827;background:#e5e7eb;border-color:#9ca3af;">✖ Cancel</button>
         </div>
         <div id="${fid('pane-rec')}" style="display:flex;flex-wrap:wrap;gap:10px;">${FIELDS.map(field).join('')}</div>
         <div id="${fid('pane-enq')}" style="display:none;flex-wrap:wrap;gap:10px;">${ENQ.map(field).join('')}</div>
@@ -4020,6 +4020,7 @@ function makeModule(containerId, opts){
       document.getElementById(fid('tab-enq')).onclick = ()=>showTab('enq');
       showTab(startTab==='enq' ? 'enq' : 'rec');
       document.getElementById(fid('cancel')).onclick = close;
+      document.getElementById(fid('tab-cancel')).onclick = close;
       ov.addEventListener('mousedown', e=>{ if(e.target===ov) close(); });
       if(isMdrM){
         const pl = document.getElementById(fid('place')), fw = document.getElementById(fid('facilityName')).parentElement;
