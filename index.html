@@ -808,6 +808,26 @@ const PERIOD_LABELS = {antenatal:'Antenatal', intranatal:'Intranatal', postnatal
 // Who reported the death — from the Kobo form's "Reporter designation" (ASHA / Ward member).
 // Accepts the choice name or label; falls back to the ward-member name field when a pull carries only that.
 // Reports that came from the Kobo form (pulled by the Apps Script) — shown to state / district / block logins only.
+function normDmy(v){
+  if(v==null) return '';
+  const pad=n=>String(n).padStart(2,'0');
+  if(v instanceof Date && !isNaN(v)){ const t=new Date(v.getTime()+12*3600*1000); return pad(t.getDate())+'-'+pad(t.getMonth()+1)+'-'+t.getFullYear(); }
+  const t=String(v).trim(); if(!t) return '';
+  if(/^\d{5}(\.\d+)?$/.test(t) && +t>20000 && +t<70000){ const d=new Date(Date.UTC(1899,11,30)+Math.floor(+t)*86400000); return pad(d.getUTCDate())+'-'+pad(d.getUTCMonth()+1)+'-'+d.getUTCFullYear(); }
+  let m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/); if(m) return pad(+m[3])+'-'+pad(+m[2])+'-'+m[1];
+  m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/); if(m){ let y=+m[3]; if(y<100) y+=2000; return pad(+m[1])+'-'+pad(+m[2])+'-'+y; }
+  return t;
+}
+// CDR records can arrive with the birth / death dates under other key names (cloud, Kobo, SNCU-NBSU app) or as ISO / serial values:
+// fold them into r.dob / r.date (dd-mm-yyyy) so the Records table, exports and alerts all show them.
+function cdrFixDates(r){
+  if(!r) return r;
+  const pick = re=>{ for(const k of Object.keys(r)){ if(k!=='dob' && k!=='date' && re.test(k) && r[k]!=null && String(r[k]).trim()!=='') return r[k]; } return ''; };
+  if(r.dob==null || String(r.dob).trim()==='') r.dob = pick(/^(dob|date_?of_?birth|birth_?date|child_?dob|dob_?child|date_?birth)$/i);
+  if(r.date==null || String(r.date).trim()==='') r.date = pick(/^(dod|date_?of_?death|death_?date|date_?death|dod_?child)$/i);
+  r.dob = normDmy(r.dob); r.date = normDmy(r.date);
+  return r;
+}
 function isKoboRec(r){ return !!r && (String(r.srcId||'').indexOf('kobo-')===0 || r.entrySource==='Kobo form'); }
 function reporterRole(r){
   const d = String((r && (r.reporterDesignation!=null ? r.reporterDesignation : (r.reporter_designation!=null ? r.reporter_designation : r.designation))) || '').toLowerCase();
@@ -1581,8 +1601,8 @@ function parseCdrLineListingWorkbook(workbook){
         if(birthWeightCol===null && /birth\s*weight/i.test(combined)){ birthWeightCol=c; found=true; }
         // Date of birth / Date of death — previously never read for the CDR line-listing, so both
         // columns showed blank in the Records list for every imported CDR record.
-        if(dobCol===null && /(date\s*of\s*birth|birth\s*date|\bdob\b)/.test(combined)){ dobCol=c; found=true; }
-        if(dateCol===null && /(date\s*of\s*death|death\s*date|\bdod\b)/.test(combined)){ dateCol=c; found=true; }
+        if(dobCol===null && /(date\s*of\s*birth|birth\s*date|d\.?\s*o\.?\s*b\b|\bdob\b)/.test(combined)){ dobCol=c; found=true; }
+        if(dateCol===null && /(date\s*of\s*death|death\s*date|d\.?\s*o\.?\s*d\b|\bdod\b)/.test(combined)){ dateCol=c; found=true; }
         if(reporterDesigCol===null && /reporter[\s_]*designation/.test(combined)){ reporterDesigCol=c; found=true; }
       });
       if(found) headerRowIdx = r;
@@ -1653,10 +1673,7 @@ function parseCdrLineListingWorkbook(workbook){
         const t = new Date(cell.v.getTime() + 12*3600*1000);   // +12h keeps the calendar day whatever the timezone shift
         return pad(t.getDate())+'-'+pad(t.getMonth()+1)+'-'+t.getFullYear();
       }
-      const txt = String(rows[r][c]==null ? '' : rows[r][c]).trim();
-      const m = txt.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-      if(m){ let y=+m[3]; if(y<100) y+=2000; return pad(+m[1])+'-'+pad(+m[2])+'-'+y; }
-      return txt;
+      return normDmy(rows[r][c]);
     };
 
     const records=[];
@@ -3647,6 +3664,7 @@ function makeModule(containerId, opts){
       let add = (j && j.records) || [];
       if(!add.length) return;
       add = districtLockRecords(add);
+      if(containerId==='cdr') add.forEach(cdrFixDates);
       if(BLOCK_LOCK || FACILITY_LOCK) add = add.filter(mpInScope);
       if(containerId==='mdr') add.forEach(r=>{ r.place = normalizePlaceValue(r.place); r.period = normalizePeriodValue(r.period); });
       const have = (lineListing && lineListing.records) || [];
@@ -4223,6 +4241,7 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
   }
   function lineListingRebuildAndRender(){
     if(!lineListing || !lineListing.records || !lineListing.records.length) return;
+    if(containerId==='cdr') lineListing.records.forEach(cdrFixDates);
     refreshBlockFilterOptions();
     workbook = containerId==='cdr'
       ? buildCdrWorkbookFromLineListing(lineListing.records)
