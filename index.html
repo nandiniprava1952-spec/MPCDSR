@@ -808,6 +808,15 @@ const PERIOD_LABELS = {antenatal:'Antenatal', intranatal:'Intranatal', postnatal
 // Who reported the death — from the Kobo form's "Reporter designation" (ASHA / Ward member).
 // Accepts the choice name or label; falls back to the ward-member name field when a pull carries only that.
 // Reports that came from the Kobo form (pulled by the Apps Script) — shown to state / district / block logins only.
+function recMore(btn, all){
+  const n = btn.parentElement, wrap = n.previousElementSibling; if(!wrap) return;
+  const hid = Array.prototype.filter.call(wrap.querySelectorAll('tr.recx'), tr=>tr.style.display==='none');
+  hid.slice(0, all ? hid.length : 200).forEach(tr=>{ tr.style.display=''; });
+  const total = +n.getAttribute('data-total')||0, left = hid.length - (all ? hid.length : Math.min(200,hid.length));
+  const t = n.querySelector('.recnote-t');
+  if(left>0){ if(t) t.textContent = 'Showing first '+(total-left).toLocaleString()+' of '+total.toLocaleString()+' records'; }
+  else { if(t) t.textContent = total.toLocaleString()+' records'; n.querySelectorAll('button').forEach(b=>b.remove()); }
+}
 function normDmy(v){
   if(v==null) return '';
   const pad=n=>String(n).padStart(2,'0');
@@ -845,9 +854,9 @@ function isHrpYes(v){
 function recordsTableHtml(recs, limit, showMdrCols){
   limit = limit || 200;
   if(!recs.length) return `<div class="empty" style="padding:10px 0;">No matching records in the line-listing for this selection</div>`;
-  const shown = recs.slice(0, limit);
+  const shown = recs;   // every row is rendered; rows past `limit` start hidden and are revealed by the Show more / Show all buttons
   const hasCombinedName = recs.some(r=>r.nameCombined);
-  const rows = shown.map(r=>`<tr>
+  const rows = shown.map((r,__i)=>`<tr${__i>=limit?' class="recx" style="display:none"':''}>
     <td>${escapeHtml(r.district||'')}</td>
     <td>${escapeHtml(r.block||'')}</td>
     ${showMdrCols?(hasCombinedName?`<td style="white-space:normal;max-width:260px;">${escapeHtml(r.nameCombined||'')}</td>`:`<td>${escapeHtml(r.deceasedName||'')}</td><td style="white-space:normal;max-width:260px;">${escapeHtml(r.husbandGuardian||'')}</td>`):''}
@@ -864,7 +873,7 @@ function recordsTableHtml(recs, limit, showMdrCols){
     ${showMdrCols?`<td>${escapeHtml(r.gravida||'')}</td>`:''}
     ${showMdrCols?`<td>${escapeHtml(r.para||'')}</td>`:''}
   </tr>`).join('');
-  const note = recs.length>limit ? `<div style="color:var(--muted);font-size:12px;margin-top:6px;">Showing first ${limit} of ${recs.length.toLocaleString()} records</div>` : `<div style="color:var(--muted);font-size:12px;margin-top:6px;">${recs.length.toLocaleString()} record${recs.length===1?'':'s'}</div>`;
+  const note = recs.length>limit ? `<div class="recnote" data-total="${recs.length}" style="color:var(--muted);font-size:12px;margin-top:6px;"><span class="recnote-t">Showing first ${limit} of ${recs.length.toLocaleString()} records</span> <button type="button" onclick="recMore(this)" style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--accent);cursor:pointer;">Show next 200</button> <button type="button" onclick="recMore(this,true)" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--accent);cursor:pointer;">Show all</button></div>` : `<div style="color:var(--muted);font-size:12px;margin-top:6px;">${recs.length.toLocaleString()} record${recs.length===1?'':'s'}</div>`;
   return `<div style="overflow:auto;max-height:360px;border:1px solid var(--border);border-radius:8px;">
     <table style="border-collapse:collapse;font-size:12.5px;white-space:nowrap;">
       <thead style="position:sticky;top:0;background:var(--panel2);">
@@ -896,8 +905,8 @@ function recordsTableHtml(recs, limit, showMdrCols){
 function cdrRecordsTableHtml(recs, limit){
   limit = limit || 200;
   if(!recs.length) return `<div class="empty" style="padding:10px 0;">No matching records in the line-listing for this selection</div>`;
-  const shown = recs.slice(0, limit);
-  const rows = shown.map(r=>`<tr>
+  const shown = recs;   // every row is rendered; rows past `limit` start hidden and are revealed by the Show more / Show all buttons
+  const rows = shown.map((r,__i)=>`<tr${__i>=limit?' class="recx" style="display:none"':''}>
     <td>${escapeHtml(r.district||'')}</td>
     <td>${escapeHtml(r.block||'')}</td>
     <td>${escapeHtml(r.phcArea||'')}</td>
@@ -915,7 +924,7 @@ function cdrRecordsTableHtml(recs, limit){
     <td style="white-space:normal;max-width:220px;">${escapeHtml(r.causeMajor||'')}</td>
     <td style="white-space:normal;max-width:220px;">${escapeHtml(r.causeOther||'')}</td>
   </tr>`).join('');
-  const note = recs.length>limit ? `<div style="color:var(--muted);font-size:12px;margin-top:6px;">Showing first ${limit} of ${recs.length.toLocaleString()} records</div>` : `<div style="color:var(--muted);font-size:12px;margin-top:6px;">${recs.length.toLocaleString()} record${recs.length===1?'':'s'}</div>`;
+  const note = recs.length>limit ? `<div class="recnote" data-total="${recs.length}" style="color:var(--muted);font-size:12px;margin-top:6px;"><span class="recnote-t">Showing first ${limit} of ${recs.length.toLocaleString()} records</span> <button type="button" onclick="recMore(this)" style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--accent);cursor:pointer;">Show next 200</button> <button type="button" onclick="recMore(this,true)" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--accent);cursor:pointer;">Show all</button></div>` : `<div style="color:var(--muted);font-size:12px;margin-top:6px;">${recs.length.toLocaleString()} record${recs.length===1?'':'s'}</div>`;
   return `<div style="overflow:auto;max-height:360px;border:1px solid var(--border);border-radius:8px;">
     <table style="border-collapse:collapse;font-size:12.5px;white-space:nowrap;">
       <thead style="position:sticky;top:0;background:var(--panel2);">
