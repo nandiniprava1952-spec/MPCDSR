@@ -3804,15 +3804,15 @@ function makeModule(containerId, opts){
       const shown = idx.slice(0, LIMIT);
       const th = t=>`<th style="text-align:left;padding:6px 8px;">${t}</th>`;
       const td = t=>`<td>${escapeHtml(t==null?'':t)}</td>`;
-      const head = isMdrM ? ['District','Block','Mother','Husband / Guardian','Age','Date of death','Place','Name of facility','Period','Month / Year','Actions']
-                          : ['District','Block','Sex','Date of birth','Date of death','Age','Age category','Place','Name of facility','Month / Year','Actions'];
+      const head = isMdrM ? ['District','Block','Mother','Husband / Guardian','Age','Date of death','Place','Name of facility','Period','Month / Year','Enquiry','Actions']
+                          : ['District','Block','Sex','Date of birth','Date of death','Age','Age category','Place','Name of facility','Month / Year','Enquiry','Actions'];
       const rows = shown.map(i=>{
         const r = all[i];
         const my = [r.month,r.year].filter(Boolean).join(' ');
-        const eb = `<td style="white-space:nowrap;"><button type="button" class="dl-tab mp-rec-view" data-i="${i}" style="padding:4px 10px;min-height:0;">👁 View</button> <button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;">✏ Edit</button>${canDelete()?` <button type="button" class="dl-tab mp-rec-del" data-i="${i}" style="padding:4px 10px;min-height:0;color:#c0392b;border-color:#c0392b;">🗑 Delete</button>`:''}</td>`;
+        const eb = `<td style="white-space:nowrap;"><button type="button" class="dl-tab mp-rec-edit" data-i="${i}" style="padding:4px 10px;min-height:0;">📂 Open</button>${canDelete()?` <button type="button" class="dl-tab mp-rec-del" data-i="${i}" style="padding:4px 10px;min-height:0;color:#c0392b;border-color:#c0392b;">🗑 Delete</button>`:''}</td>`;
         return '<tr>'+(canDelete()?'<td><input type="checkbox" class="mp-rec-sel" data-i="'+i+'"'+(selected.has(r)?' checked':'')+'></td>':'')+(isMdrM
-          ? td(r.district)+td(r.block)+td(r.nameCombined||r.deceasedName)+td(r.husbandGuardian)+td(r.age)+td(r.date)+td(PLACE_LABELS[r.place]||r.place)+td(r.facilityName)+td(PERIOD_LABELS[r.period]||r.period)+td(my)
-          : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(r.facilityName)+td(my))+eb+'</tr>';
+          ? td(r.district)+td(r.block)+td(r.nameCombined||r.deceasedName)+td(r.husbandGuardian)+td(r.age)+td(r.date)+td(PLACE_LABELS[r.place]||r.place)+td(r.facilityName)+td(PERIOD_LABELS[r.period]||r.period)+td(my)+td(r.enqStatus||'')
+          : td(r.district)+td(r.block)+td(r.gender)+td(r.dob)+td(r.date)+td(r.age)+td(r.ageCategory)+td(r.place)+td(r.facilityName)+td(my)+td(r.enqStatus||''))+eb+'</tr>';
       }).join('');
       const scope = BLOCK_LOCK ? (BLOCK_LOCK.name+' block') : (DISTRICT_LOCK ? DISTRICT_LOCK.name+' district' : 'all districts');
       panel.innerHTML = `<div style="border:1px solid var(--rec-border);border-radius:12px;padding:10px;background:var(--rec-bg);">
@@ -3960,6 +3960,17 @@ function makeModule(containerId, opts){
     function editRecord(i){
       const r = recs()[i]; if(!r) return;
       const fid = k=>`${containerId}-ed-${k}`;
+      const ENQ = [
+        ['enqStatus','Enquiry status','select',[['Pending','Pending'],['In progress','In progress'],['Completed','Completed']]],
+        ['enqDate','Date of enquiry (dd-mm-yyyy)','text'],
+        ['enqBy','Enquired by (name)','text'],
+        ['enqDesig','Designation','text'],
+        ['enqMode','Mode of enquiry','select',[['Home visit','Home visit'],['Facility record review','Facility record review'],['Phone call','Phone call'],['Other','Other']]],
+        ['enqFindings','Findings of enquiry','textarea',null,1],
+        ['enqFactors','Contributing / avoidable factors identified','textarea',null,1],
+        ['enqAction','Action taken / recommendation','textarea',null,1],
+        ['enqRemarks','Remarks','textarea',null,1]
+      ];
       const field = ([k,label,type,optsL,wide])=>{
         let cur = r[k]==null ? '' : String(r[k]);
         const placeLock = (k==='place' && FACILITY_LOCK);   // facility / SNCU / NBSU login: death is always an institutional (public facility) death
@@ -3970,6 +3981,8 @@ function makeModule(containerId, opts){
           if(cur && !o.some(x=>String(x[0]).toLowerCase()===cur.toLowerCase())) o.push([cur,cur]);
           const curM = (o.find(x=>String(x[0]).toLowerCase()===cur.toLowerCase())||[cur])[0];
           input = `<select id="${fid(k)}"${placeLock?' disabled':''} style="${inCss}"><option value="">— select —</option>${o.map(x=>`<option value="${escapeHtml(x[0])}"${String(x[0])===String(curM)?' selected':''}>${escapeHtml(x[1])}</option>`).join('')}</select>`;
+        } else if(type==='textarea'){
+          input = `<textarea id="${fid(k)}" rows="3" autocomplete="off" style="${inCss}resize:vertical;font-family:inherit;">${escapeHtml(cur)}</textarea>`;
         } else {
           const ro = ((k==='block' && BLOCK_LOCK) || (k==='facilityName' && FACILITY_LOCK)) ? ' readonly' : '';
           input = `<input type="${type==='number'?'number':'text'}" ${type==='number'?'min="0" ':''}id="${fid(k)}" value="${escapeHtml(cur)}"${ro} autocomplete="off" style="${inCss}">`;
@@ -3979,9 +3992,14 @@ function makeModule(containerId, opts){
       const ov = document.createElement('div');
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 10px;';
       ov.innerHTML = `<div style="background:#fff;color:#111827;border-radius:12px;max-width:820px;width:100%;padding:16px;box-sizing:border-box;">
-        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">✏ Edit ${isMdrM?'MDR':'CDR'} record</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">✏ ${isMdrM?'MDR':'CDR'} record</div>
         <div style="font-size:12.5px;color:#5b6475;margin-bottom:12px;">${escapeHtml(r.district||'')}${r.block?' · '+escapeHtml(r.block):''}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;">${FIELDS.map(field).join('')}</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid #d5dae3;padding-bottom:8px;">
+          <button type="button" id="${fid('tab-rec')}" class="dl-tab">View / Edit</button>
+          <button type="button" id="${fid('tab-enq')}" class="dl-tab">Enquiry</button>
+        </div>
+        <div id="${fid('pane-rec')}" style="display:flex;flex-wrap:wrap;gap:10px;">${FIELDS.map(field).join('')}</div>
+        <div id="${fid('pane-enq')}" style="display:none;flex-wrap:wrap;gap:10px;">${ENQ.map(field).join('')}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;">
           <button type="button" id="${fid('save')}" class="dl-tab" style="background:#1d6fb8;color:#fff;border-color:#1d6fb8;">✔ Save changes</button>
           <button type="button" id="${fid('cancel')}" class="dl-tab" style="color:#111827;">Cancel</button>
@@ -3991,6 +4009,15 @@ function makeModule(containerId, opts){
       const g = k=>{ const e=document.getElementById(fid(k)); return e ? String(e.value).trim() : ''; };
       const emsg = t=>{ document.getElementById(fid('msg')).textContent = t; };
       const close = ()=>{ ov.remove(); };
+      const showTab = w=>{
+        const enq = w==='enq';
+        document.getElementById(fid('pane-rec')).style.display = enq ? 'none' : 'flex';
+        document.getElementById(fid('pane-enq')).style.display = enq ? 'flex' : 'none';
+        [['rec',!enq],['enq',enq]].forEach(([n,on])=>{ const b = document.getElementById(fid('tab-'+n)); b.style.background = on ? '#1d6fb8' : ''; b.style.color = on ? '#fff' : '#111827'; b.style.borderColor = on ? '#1d6fb8' : ''; });
+      };
+      document.getElementById(fid('tab-rec')).onclick = ()=>showTab('rec');
+      document.getElementById(fid('tab-enq')).onclick = ()=>showTab('enq');
+      showTab('rec');
       document.getElementById(fid('cancel')).onclick = close;
       ov.addEventListener('mousedown', e=>{ if(e.target===ov) close(); });
       if(isMdrM){
@@ -4017,8 +4044,10 @@ function makeModule(containerId, opts){
           const dod = g('date') ? mpParseDmy(g('date')) : null;
           if(dod && dob>dod){ emsg('Date of birth cannot be after the date of death.'); return; }
         }
+        if(g('enqDate') && !mpParseDmy(g('enqDate'))){ showTab('enq'); emsg('Date of enquiry must be dd-mm-yyyy.'); return; }
         const nr = Object.assign({}, r);   // fresh object (the search index cache lives on the old one)
         FIELDS.forEach(([k])=>{ nr[k] = g(k); });
+        ENQ.forEach(([k])=>{ nr[k] = g(k); });   // enquiry details travel with the record (saved to the cloud with it)
         if(FACILITY_LOCK){ nr.place = isMdrM ? 'facility' : 'Public facility'; nr.facilityName = FACILITY_LOCK.name; }   // institution death
         if(isMdrM){
           nr.place = normalizePlaceValue(nr.place); nr.period = normalizePeriodValue(nr.period);
