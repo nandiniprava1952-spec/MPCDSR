@@ -6879,7 +6879,15 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(ev.target===x){ dismissed = true; try{ sessionStorage.setItem('mp_install_dismissed','1'); }catch(_){} show(); return; }
     if(deferred){ var d = deferred; deferred = null; d.prompt(); d.userChoice.then(function(c){ if(c && c.outcome==='accepted'){ installed = true; } show(); }); }
     else if(ios){ alert('To install: tap the Share button in Safari, then "Add to Home Screen".'); }
-    else { alert('To install: open your browser menu and choose "Install app" or "Add to Home Screen".'); }
+    else {
+      var edge = /edg\//i.test(ua), chrome = /chrome\//i.test(ua) && !edge, ff = /firefox/i.test(ua), m;
+      if(isStandalone) m = 'This app is already installed and running as an app.';
+      else if(edge) m = 'Install is not being offered right now.\n\n1) Check edge://apps - the app may already be installed (then use "Open in app" from the menu).\n2) Otherwise open the menu (...) > Apps > "Install this site as an app".\n3) If you closed the install prompt earlier, reload the page (Ctrl+F5) and try again.';
+      else if(chrome) m = 'Install is not being offered right now.\n\n1) Check chrome://apps - the app may already be installed.\n2) Otherwise open the menu (3 dots) > "Cast, save and share" > "Install page as app" (or the install icon at the right end of the address bar).\n3) If you closed the install prompt earlier, reload the page (Ctrl+F5) and try again.';
+      else if(ff) m = 'Firefox on desktop cannot install web apps. Open this page in Chrome or Edge to install it (Firefox on Android: menu > Install).';
+      else m = 'To install: open your browser menu and choose "Install app" or "Add to Home Screen".';
+      alert(m);
+    }
   });
 
   // Online / Offline pill: navigator.onLine can be wrong (Wi-Fi without internet), so also ping this site.
