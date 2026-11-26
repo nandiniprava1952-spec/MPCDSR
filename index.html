@@ -4779,8 +4779,21 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
       // upload) — summed across every month present, and re-filtered to whichever
       // district is selected here, same as every other card on this row. Shown in
       // BOTH the MDR and CDR modules since this code is shared by makeModule().
-      if(deliveryData){
+      // Deliveries are only tracked per DISTRICT and MONTH (no block column), so these cards follow the District and
+      // Month filters (a single month sheet, or the From-To range when "Total" is selected) and are hidden when a
+      // Block is selected / a block login is active — same rule as the monthly chart — so district-wide deliveries never
+      // sit beside block-level deaths.
+      const deliveryBlockScoped = blockFilterActive || (typeof BLOCK_LOCK!=='undefined' && !!BLOCK_LOCK);
+      if(deliveryData && !deliveryBlockScoped){
         const dTotals = {home:0, institutional:0, total:0};
+        // Month keys the Month filter covers; null = no usable month filter, keep every month in the Delivery file.
+        let dMonthKeys = null;
+        if(isTotal){
+          if(durActive()) dMonthKeys = new Set(durNames.filter(durAllow).map(sheetNameToMonthKey).filter(Boolean));
+        } else {
+          const mk0 = sheetNameToMonthKey(monthMatchKey) || sheetNameToMonthKey(sheetName);
+          if(mk0) dMonthKeys = new Set([mk0]);
+        }
         let anyData = false;
         const perMonth = selectedDistrict==='__ALL__'
           ? deliveryData.byMonth
@@ -4788,6 +4801,7 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
         Object.keys(perMonth).forEach(mk=>{
           const m = perMonth[mk];
           if(!m) return;
+          if(dMonthKeys && !dMonthKeys.has(mk)) return;
           anyData = true;
           dTotals.home += m.home||0;
           dTotals.institutional += m.institutional||0;

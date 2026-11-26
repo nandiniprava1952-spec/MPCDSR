@@ -77,3 +77,6 @@ A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interfac
 - It refreshes after each **Load latest** and with **Refresh**.
 - Needs the updated `MPCDSR_Code.gs` (read-only action `koboSummary`): Deploy > Manage deployments > edit > **New version**. Until then the panel shows "Status unavailable ... Unknown action".
 - **Overview card:** the MDR tab shows **MDR reports from Kobo** and the CDR tab **CDR reports from Kobo**, next to the ASHA / Ward member cards. They follow Overview's month, district and block filters and are already included in Total death.
+
+## Delivery cards follow the filters
+- **Total / Institutional / Home deliveries** now follow the **District** and **Month** filters (one month, or the From-To range under Total). They are hidden for a block login or when a **Block** is selected, because the Delivery data has no block column (the monthly chart already did this).
