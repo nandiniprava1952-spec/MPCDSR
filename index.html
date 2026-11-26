@@ -4483,7 +4483,7 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
     const admin = !!(CLOUD_AUTH && CLOUD_AUTH.district==='ADMIN');
     if(!admin && !deliveryCloudMsg){ deliveryCloudEl.style.display='none'; return; }
     deliveryCloudEl.style.display = '';
-    deliveryCloudEl.innerHTML = (admin ? '<button type="button" data-delivery-save'+((deliveryData && deliveryFromLocal)?'':' disabled')+'>☁ Save Delivery data to cloud</button>' : '')
+    deliveryCloudEl.innerHTML = (admin ? '<button type="button" data-delivery-save title="Adds new months and districts to the cloud. A district + month already saved is replaced by the new figure, never added to it."'+((deliveryData && deliveryFromLocal)?'':' disabled')+'>☁ Save Delivery data to cloud</button>' : '')
       + '<span class="cloud-status" style="'+(deliveryCloudErr?'color:#c0392b;':'')+'">'+String(deliveryCloudMsg).replace(/[<>&]/g,'')+'</span>';
   }
   if(deliveryCloudEl) deliveryCloudEl.addEventListener('click', e=>{ if(e.target.closest('[data-delivery-save]')) deliveryCloudSave(); });
@@ -4495,9 +4495,12 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
     if(!Object.keys(byCode).length){ deliveryCloudUi('No district in this file matches a known district name — nothing saved.', true); return; }
     deliveryCloudUi('Saving…');
     try{
-      const j = await recCall('deliverySave', { byMonth: deliveryData.byMonth, byCode, fileName: deliveryLocalName });
-      deliveryCloudStamp = j.savedAt; _mpDeliv = { t:0, p:null };
-      deliveryCloudUi('Saved to the cloud: '+j.districts+' districts, '+deliveryIst(j.savedAt)+'.'+(left.length?' Not recognised, so left out of district logins: '+left.join(', ')+'.':''));
+      const j = await recCall('deliverySave', { byCode, fileName: deliveryLocalName });
+      _mpDeliv = { t:0, p:null };
+      deliveryFromLocal = false; deliveryCloudStamp = 0;            // from now on this tab shows the MERGED cloud copy
+      await deliveryCloudLoad();
+      deliveryCloudUi('Saved '+deliveryIst(j.savedAt)+(j.added===undefined ? '.' : ': '+j.added+' new district-month figure(s) added, '+j.updated+' updated, '+j.unchanged+' already in the cloud (never double-counted). The cloud now covers '+j.months+' month(s).')
+        +(left.length?' Not recognised, so left out: '+left.join(', ')+'.':''));
       document.dispatchEvent(new CustomEvent('mp-delivery-changed'));
     }catch(e){ deliveryCloudUi('Could not save: '+String((e && e.message) || e), true); }
   }

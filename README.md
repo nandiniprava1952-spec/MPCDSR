@@ -84,5 +84,6 @@ A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interfac
 ## Delivery data in the cloud
 - The state (ADMIN) login chooses the **District/Month-wise Delivery data** workbook as before, then presses **Save Delivery data to cloud** (under the upload box). Only counts per district and month are stored.
 - After sign-in every login loads it automatically (and on **Load latest**): the state login gets all districts and the state total; a district login gets only its own district. The server enforces this. Block logins load their district's data but the cards stay hidden for a block (no block column); facility / SNCU / NBSU logins don't load it.
-- A file chosen on a device in that session wins over the cloud copy on that device. Saving again replaces the cloud copy.
+- A file chosen on a device in that session wins over the cloud copy on that device, until it is saved.
+- **Saving merges, it does not replace.** New months and districts are added; a district + month already in the cloud is replaced by the new figure (never added to it), so re-saving the same file or an overlapping one cannot double-count. A blank / zero month never overwrites a saved figure. After saving, the message says how many figures were added, updated and already there, and the tab then shows the merged cloud copy. Months are matched by month name (the Delivery file has no year).
 - Needs the updated `MPCDSR_Code_1.gs` (new actions `deliveryGet`, `deliverySave`): Deploy > Manage deployments > edit > **New version**.
