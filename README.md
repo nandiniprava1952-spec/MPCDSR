@@ -80,3 +80,9 @@ A **ଓଡ଼ିଆ / English** button (bottom-left) switches the whole interfac
 
 ## Delivery cards follow the filters
 - **Total / Institutional / Home deliveries** now follow the **District** and **Month** filters (one month, or the From-To range under Total). They are hidden for a block login or when a **Block** is selected, because the Delivery data has no block column (the monthly chart already did this).
+
+## Delivery data in the cloud
+- The state (ADMIN) login chooses the **District/Month-wise Delivery data** workbook as before, then presses **Save Delivery data to cloud** (under the upload box). Only counts per district and month are stored.
+- After sign-in every login loads it automatically (and on **Load latest**): the state login gets all districts and the state total; a district login gets only its own district. The server enforces this. Block logins load their district's data but the cards stay hidden for a block (no block column); facility / SNCU / NBSU logins don't load it.
+- A file chosen on a device in that session wins over the cloud copy on that device. Saving again replaces the cloud copy.
+- Needs the updated `MPCDSR_Code_1.gs` (new actions `deliveryGet`, `deliverySave`): Deploy > Manage deployments > edit > **New version**.

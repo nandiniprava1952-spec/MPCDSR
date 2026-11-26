@@ -2996,6 +2996,13 @@ function mpAgeFromDob(dob, ref){
 
 // ---- "Kobo sync" panel (state / district / block logins): when the Apps Script last pulled from Kobo and how many
 // Kobo reports are stored for this login. Read-only: action 'koboSummary'. Facility / SNCU / NBSU logins never see it.
+let _mpDeliv = { t:0, p:null };
+function mpDeliveryGet(force){                      // MDR and CDR share one request
+  if(!force && _mpDeliv.p && Date.now()-_mpDeliv.t < 15000) return _mpDeliv.p;
+  _mpDeliv.t = Date.now();
+  _mpDeliv.p = recCall('deliveryGet', {}).catch(e=>{ _mpDeliv.p = null; throw e; });
+  return _mpDeliv.p;
+}
 let _mpKobo = { t:0, p:null };
 function mpKoboSummary(force){
   if(!force && _mpKobo.p && Date.now()-_mpKobo.t < 15000) return _mpKobo.p;      // MDR and CDR tabs share one request
@@ -3069,6 +3076,7 @@ function makeModule(containerId, opts){
           <div class="fname" id="${containerId}-delivery-fname">No file selected</div>
           <input type="file" id="${containerId}-delivery-file" accept=".xlsx,.xls">
         </label>
+        <div id="${containerId}-delivery-cloud" class="cloud-row" style="flex:1 1 100%;display:none;margin:0;"></div>
         <div id="${containerId}-add-rec" style="flex:1 1 100%;"></div>
         <div class="filter-row">
           <div style="min-width:150px;flex:1;" id="${containerId}-year-wrap">
@@ -3701,7 +3709,7 @@ function makeModule(containerId, opts){
       document.dispatchEvent(new CustomEvent('mp-rec-changed',{detail:containerId}));
     }catch(e){ /* the link is optional: never block the dashboard */ console.warn('SNCU link:', e && e.message); }
   }
-  async function cloudLoadModule(silent){ await cloudLoadModuleCore(silent); await cdrMergeLinked(); koboPanelRefresh(true); }
+  async function cloudLoadModule(silent){ await cloudLoadModuleCore(silent); await cdrMergeLinked(); koboPanelRefresh(true); deliveryCloudLoad(); }
   async function cloudLoadModuleCore(silent){
     if(!cloudReady() || cloudBusy) return;
     // SNCU / NBSU logins have no MDR module: don't download maternal records at all
@@ -4457,10 +4465,73 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
         deliveryFname.textContent = f.name + ' — could not detect a month-wise district delivery table on this workbook';
         return;
       }
+      deliveryFromLocal = true; deliveryLocalName = f.name;     // a file chosen in this session wins over the cloud copy
+      deliveryCloudUi((CLOUD_AUTH && CLOUD_AUTH.district==='ADMIN') ? 'This file is only on this device — press Save to share it with all logins.' : 'Using the file you chose on this device (not the cloud copy).');
       if(currentSheetName) render(currentSheetName);
     };
     reader.readAsArrayBuffer(f);
   });
+
+  // ---- Delivery data in the cloud: the state (ADMIN) login saves the parsed Delivery workbook once; every login loads its own scope
+  // after sign-in. District / block logins receive only their own district's rows (the server enforces it).
+  let deliveryFromLocal = false, deliveryLocalName = '', deliveryCloudStamp = 0, deliveryCloudMsg = '', deliveryCloudErr = false;
+  const deliveryCloudEl = document.getElementById(`${containerId}-delivery-cloud`);
+  const deliveryIst = ms=>mpKoboIst(new Date(ms).toISOString());
+  function deliveryCloudUi(msg, isErr){
+    if(msg!==undefined){ deliveryCloudMsg = msg; deliveryCloudErr = !!isErr; }
+    if(!deliveryCloudEl) return;
+    const admin = !!(CLOUD_AUTH && CLOUD_AUTH.district==='ADMIN');
+    if(!admin && !deliveryCloudMsg){ deliveryCloudEl.style.display='none'; return; }
+    deliveryCloudEl.style.display = '';
+    deliveryCloudEl.innerHTML = (admin ? '<button type="button" data-delivery-save'+((deliveryData && deliveryFromLocal)?'':' disabled')+'>☁ Save Delivery data to cloud</button>' : '')
+      + '<span class="cloud-status" style="'+(deliveryCloudErr?'color:#c0392b;':'')+'">'+String(deliveryCloudMsg).replace(/[<>&]/g,'')+'</span>';
+  }
+  if(deliveryCloudEl) deliveryCloudEl.addEventListener('click', e=>{ if(e.target.closest('[data-delivery-save]')) deliveryCloudSave(); });
+  async function deliveryCloudSave(){
+    if(!deliveryData || !(CLOUD_AUTH && CLOUD_AUTH.district==='ADMIN')) return;
+    const nameToCode = {}; Object.keys(DISTRICT_ACCESS).forEach(c=>{ nameToCode[normalizeDistrict(DISTRICT_ACCESS[c].name)] = c; });
+    const byCode = {}, left = [];
+    Object.keys(deliveryData.byDistrictMonth).forEach(k=>{ const c = nameToCode[k]; if(c) byCode[c] = deliveryData.byDistrictMonth[k]; else left.push(k); });
+    if(!Object.keys(byCode).length){ deliveryCloudUi('No district in this file matches a known district name — nothing saved.', true); return; }
+    deliveryCloudUi('Saving…');
+    try{
+      const j = await recCall('deliverySave', { byMonth: deliveryData.byMonth, byCode, fileName: deliveryLocalName });
+      deliveryCloudStamp = j.savedAt; _mpDeliv = { t:0, p:null };
+      deliveryCloudUi('Saved to the cloud: '+j.districts+' districts, '+deliveryIst(j.savedAt)+'.'+(left.length?' Not recognised, so left out of district logins: '+left.join(', ')+'.':''));
+      document.dispatchEvent(new CustomEvent('mp-delivery-changed'));
+    }catch(e){ deliveryCloudUi('Could not save: '+String((e && e.message) || e), true); }
+  }
+  async function deliveryCloudLoad(){
+    try{
+      if(!cloudReady() || FACILITY_LOCK) return;       // facility / SNCU / NBSU logins never use district delivery counts
+      const admin = CLOUD_AUTH.district==='ADMIN';
+      deliveryCloudUi();                                // shows the Save button for the state login
+      if(deliveryFromLocal) return;
+      const j = await mpDeliveryGet(false);
+      if(!j || j.empty){ if(admin && !deliveryData) deliveryCloudUi('No Delivery data saved in the cloud yet — choose the file, then press Save.'); return; }
+      if(deliveryData && j.savedAt===deliveryCloudStamp) return;      // already showing this version
+      const byDistrictMonth = {}, byMonth = {};
+      Object.keys(j.byCode||{}).forEach(c=>{
+        if(!DISTRICT_ACCESS[c]) return;
+        byDistrictMonth[normalizeDistrict(DISTRICT_ACCESS[c].name)] = j.byCode[c];
+        if(!admin) Object.keys(j.byCode[c]).forEach(mk=>{                // a district login's "state" figure is its own district
+          const b = byMonth[mk] || (byMonth[mk] = {home:0, institutional:0, total:0}); const v = j.byCode[c][mk];
+          b.home += v.home||0; b.institutional += v.institutional||0; b.total += v.total||0;
+        });
+      });
+      if(admin) Object.assign(byMonth, j.byMonth||{});
+      if(!Object.keys(byMonth).length) return;
+      deliveryData = { byMonth, byDistrictMonth };
+      deliveryCloudStamp = j.savedAt;
+      deliveryFname.textContent = '☁ '+(j.fileName||'Delivery data')+' · saved '+deliveryIst(j.savedAt);
+      deliveryCloudUi('Delivery data loaded from the cloud (saved '+deliveryIst(j.savedAt)+').');
+      if(currentSheetName) render(currentSheetName);
+    }catch(e){
+      console.warn('Delivery cloud:', e && e.message);
+      if(CLOUD_AUTH && CLOUD_AUTH.district==='ADMIN' && !deliveryFromLocal) deliveryCloudUi('Could not read cloud Delivery data: '+String((e && e.message) || e)+(/unknown action/i.test(String(e && e.message))?' — deploy the updated MPCDSR_Code_1.gs as a New version.':''), true);
+    }
+  }
+  document.addEventListener('mp-delivery-changed', ()=>{ if(!deliveryFromLocal) deliveryCloudLoad(); });
 
   monthSel.addEventListener('change', ()=>render(monthSel.value));
 
@@ -4783,7 +4854,7 @@ let selectedTotal=false;   // whether the "Total death" KPI card is currently dr
       // Month filters (a single month sheet, or the From-To range when "Total" is selected) and are hidden when a
       // Block is selected / a block login is active — same rule as the monthly chart — so district-wide deliveries never
       // sit beside block-level deaths.
-      const deliveryBlockScoped = blockFilterActive || (typeof BLOCK_LOCK!=='undefined' && !!BLOCK_LOCK);
+      const deliveryBlockScoped = blockFilterActive || (typeof BLOCK_LOCK!=='undefined' && !!BLOCK_LOCK) || (typeof FACILITY_LOCK!=='undefined' && !!FACILITY_LOCK);
       if(deliveryData && !deliveryBlockScoped){
         const dTotals = {home:0, institutional:0, total:0};
         // Month keys the Month filter covers; null = no usable month filter, keep every month in the Delivery file.
